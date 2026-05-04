@@ -6,4 +6,18 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../RedPandaFlow.Domain/RedPandaFlow.Domain.csproj" />
+    <ProjectReference Include="../RedPandaFlow.Application/RedPandaFlow.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.2.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.2.1" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+  </ItemGroup>
+
 </Project>
