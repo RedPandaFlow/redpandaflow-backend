@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using RedPandaFlow.Application.DTOs;
 using RedPandaFlow.Application.Interfaces.Services;
 using RedPandaFlow.Domain.Entities;
@@ -64,6 +65,10 @@ namespace RedPandaFlow.Infrastructure.Services
                 var accessToken = _jwtTokenService.GenerateAccessToken(user.Id, user.Username, user.Email);
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
 
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                await _context.SaveChangesAsync();
+
                 return new AuthResponse
                 {
                     Success = true,
@@ -114,6 +119,10 @@ namespace RedPandaFlow.Infrastructure.Services
                 var accessToken = _jwtTokenService.GenerateAccessToken(user.Id, user.Username, user.Email);
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
 
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                await _context.SaveChangesAsync();
+
                 return new AuthResponse
                 {
                     Success = true,
@@ -140,10 +149,29 @@ namespace RedPandaFlow.Infrastructure.Services
 
         public async Task<AuthResponse> RefreshTokenAsync(string refreshToken)
         {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+
+            if (user == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+            {
+                return new AuthResponse
+                {
+                  Success = false,
+                  Message = "Invalid or expired token"  
+                };
+            }
+
+            var newAccessToken = _jwtTokenService.GenerateAccessToken(user.Id, user.Username, user.Email);
+            var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
+
+            user.RefreshToken = newRefreshToken;
+            await _context.SaveChangesAsync();
+
             return new AuthResponse
             {
-                Success = false,
-                Message = "Refresh token logic to be implemented."
+              Success = true,
+              AccessToken = newAccessToken,
+              RefreshToken = newRefreshToken,
+              User = new UserDto { Id = user.Id, Username = user.Username, Email = user.Email}  
             };
         }
 

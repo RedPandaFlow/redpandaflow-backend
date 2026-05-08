@@ -35,7 +35,6 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddControllers();
 
-// Use in-memory database for testing
 builder.Services.AddDbContext<RedPandaFlowDbContext>(options =>
     options.UseInMemoryDatabase("RedPandaFlowDb")
 );
@@ -77,14 +76,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "RedPandaFlow API v1");
-    });
-}
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "RedPandaFlow API v1");
+    options.RoutePrefix = string.Empty;
+});
 
 app.UseHttpsRedirection();
 
