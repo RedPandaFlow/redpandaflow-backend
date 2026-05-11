@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using RedPandaFlow.Application.DTOs;
 using RedPandaFlow.Application.Interfaces.Services;
 using RedPandaFlow.Domain.Entities;
+using RedPandaFlow.Infrastructure.Config;
 using RedPandaFlow.Infrastructure.Data;
 using RedPandaFlow.Infrastructure.Services;
 
@@ -11,11 +12,13 @@ namespace RedPandaFlow.Infrastructure.Services
     {
         private readonly RedPandaFlowDbContext _context;
         private readonly IJwtTokenService _jwtTokenService;
+        private readonly JwtSettings _jwtSettings;
 
-        public AuthService(RedPandaFlowDbContext context, IJwtTokenService jwtTokenService)
+        public AuthService(RedPandaFlowDbContext context, IJwtTokenService jwtTokenService, JwtSettings jwtSettings)
         {
             _context = context;
             _jwtTokenService = jwtTokenService;
+            _jwtSettings = jwtSettings;
         }
 
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -66,7 +69,7 @@ namespace RedPandaFlow.Infrastructure.Services
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
 
                 user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays);
                 await _context.SaveChangesAsync();
 
                 return new AuthResponse
@@ -120,7 +123,7 @@ namespace RedPandaFlow.Infrastructure.Services
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
 
                 user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays);
                 await _context.SaveChangesAsync();
 
                 return new AuthResponse
@@ -164,6 +167,7 @@ namespace RedPandaFlow.Infrastructure.Services
             var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
 
             user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays);
             await _context.SaveChangesAsync();
 
             return new AuthResponse

@@ -54,9 +54,14 @@ namespace RedPandaFlow.Api.Controllers
         }
 
         [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] string refreshToken)
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
         {
-            var result = await _authService.RefreshTokenAsync(refreshToken);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _authService.RefreshTokenAsync(request.RefreshToken);
 
             if (!result.Success)
             {
