@@ -82,7 +82,7 @@ namespace RedPandaFlow.Api.Controllers
         public async Task<IActionResult> Logout()
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!int.TryParse(userIdClaim, out var userId))
+            if (!Guid.TryParse(userIdClaim, out var userId))
             {
                 return Unauthorized();
             }

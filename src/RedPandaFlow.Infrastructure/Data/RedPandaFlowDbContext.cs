@@ -19,9 +19,12 @@ namespace RedPandaFlow.Infrastructure.Data
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Username).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.PasswordHash).IsRequired();
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Username).IsRequired().HasMaxLength(25);
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(64);
+                entity.Property(e => e.Biography).HasColumnType("text");
+                entity.Property(e => e.AvatarUrl).HasMaxLength(512);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.HasIndex(e => e.Email).IsUnique();

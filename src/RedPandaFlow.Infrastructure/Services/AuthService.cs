@@ -53,9 +53,9 @@ namespace RedPandaFlow.Infrastructure.Services
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
-                var tokens = await IssueTokensAsync(user);
+                var refreshToken = await IssueRefreshTokenAsync(user);
 
-                return Success("Registration successful.", user, tokens);
+                return Success("Registration successful.", user, refreshToken);
             }
             catch (Exception ex)
             {
@@ -76,9 +76,9 @@ namespace RedPandaFlow.Infrastructure.Services
                     return Fail("Invalid email or password.");
                 }
 
-                var tokens = await IssueTokensAsync(user);
+                var refreshToken = await IssueRefreshTokenAsync(user);
 
-                return Success("Login successful.", user, tokens);
+                return Success("Login successful.", user, refreshToken);
             }
             catch (Exception ex)
             {
@@ -126,7 +126,7 @@ namespace RedPandaFlow.Infrastructure.Services
             };
         }
 
-        public async Task<bool> LogoutAsync(int userId)
+        public async Task<bool> LogoutAsync(Guid userId)
         {
             try
             {
@@ -153,7 +153,7 @@ namespace RedPandaFlow.Infrastructure.Services
             }
         }
 
-        private async Task<RefreshToken> IssueTokensAsync(User user)
+        private async Task<RefreshToken> IssueRefreshTokenAsync(User user)
         {
             var token = new RefreshToken
             {
@@ -187,7 +187,7 @@ namespace RedPandaFlow.Infrastructure.Services
             return replacement;
         }
 
-        private async Task RevokeAllActiveTokensAsync(int userId, string reason)
+        private async Task RevokeAllActiveTokensAsync(Guid userId, string reason)
         {
             var active = await _context.RefreshTokens
                 .Where(t => t.UserId == userId && t.RevokedAt == null)
@@ -224,7 +224,9 @@ namespace RedPandaFlow.Infrastructure.Services
         {
             Id = user.Id,
             Username = user.Username,
-            Email = user.Email
+            Email = user.Email,
+            Biography = user.Biography,
+            AvatarUrl = user.AvatarUrl
         };
 
         private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
