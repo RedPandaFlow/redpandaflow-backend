@@ -1,4 +1,7 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RedPandaFlow.Application.DTOs;
 using RedPandaFlow.Application.Interfaces.Services;
 
@@ -18,6 +21,7 @@ namespace RedPandaFlow.Api.Controllers
         }
 
         [HttpPost("register")]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             if (!ModelState.IsValid)
@@ -36,6 +40,7 @@ namespace RedPandaFlow.Api.Controllers
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             if (!ModelState.IsValid)
@@ -54,6 +59,7 @@ namespace RedPandaFlow.Api.Controllers
         }
 
         [HttpPost("refresh")]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
         {
             if (!ModelState.IsValid)
@@ -69,6 +75,20 @@ namespace RedPandaFlow.Api.Controllers
             }
 
             return Ok(result);
+        }
+
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<IActionResult> Logout()
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var ok = await _authService.LogoutAsync(userId);
+            return ok ? NoContent() : StatusCode(500);
         }
     }
 }
