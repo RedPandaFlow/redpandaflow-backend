@@ -8,7 +8,7 @@ namespace RedPandaFlow.Infrastructure.Services
 {
     public interface IJwtTokenService
     {
-        string GenerateAccessToken(int userId, string username, string email);
+        string GenerateAccessToken(Guid userId, string username, string email);
         string GenerateRefreshToken();
         ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
     }
@@ -22,7 +22,7 @@ namespace RedPandaFlow.Infrastructure.Services
             _jwtSettings = jwtSettings;
         }
 
-        public string GenerateAccessToken(int userId, string username, string email)
+        public string GenerateAccessToken(Guid userId, string username, string email)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
