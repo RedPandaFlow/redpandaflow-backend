@@ -4,6 +4,6 @@ namespace RedPandaFlow.Application.DTOs
 {
     public class UpdateMemberRoleRequest
     {
-        public WorkspaceRole Role { get; set; }
+        public Role Role { get; set; }
     }
 }

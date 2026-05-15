@@ -10,6 +10,6 @@ namespace RedPandaFlow.Application.DTOs
         [StringLength(50)]
         public string Email { get; set; } = string.Empty;
 
-        public WorkspaceRole Role { get; set; } = WorkspaceRole.Member;
+        public Role Role { get; set; } = Role.Member;
     }
 }
