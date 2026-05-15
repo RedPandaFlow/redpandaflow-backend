@@ -13,6 +13,8 @@ namespace RedPandaFlow.Infrastructure.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Workspace> Workspaces { get; set; }
         public DbSet<WorkspaceUser> WorkspaceUsers { get; set; }
+        public DbSet<Board> Boards { get; set; }
+        public DbSet<Column> Columns { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -77,6 +79,51 @@ namespace RedPandaFlow.Infrastructure.Data
                       .WithMany()
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<Board>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(25);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(e => e.Workspace)
+                      .WithMany()
+                      .HasForeignKey(e => e.WorkspaceId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<Column>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(25);
+                entity.Property(e => e.Order).IsRequired();
+                entity.Property(e => e.IsArchived).HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(e => e.Board)
+                      .WithMany(b => b.Columns)
+                      .HasForeignKey(e => e.BoardId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<BoardUser>(entity =>
+            {
+                entity.HasKey(e => new { e.BoardId, e.UserId });
+
+                entity.Property(e => e.Role)
+                      .HasConversion<string>()
+                      .HasMaxLength(25)
+                      .IsRequired();
+
+                entity.HasOne(e => e.Board)
+                    .WithMany()
+                    .HasForeignKey(e => e.BoardId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
