@@ -1,6 +1,6 @@
 namespace RedPandaFlow.Domain.Enums
 {
-    public enum WorkspaceRole
+    public enum Role
     {
         Admin,
         Member,
