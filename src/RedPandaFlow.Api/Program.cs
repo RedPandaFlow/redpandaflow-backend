@@ -49,8 +49,12 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddControllers();
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException(
+        "ConnectionStrings:DefaultConnection is not configured.");
+
 builder.Services.AddDbContext<RedPandaFlowDbContext>(options =>
-    options.UseInMemoryDatabase("RedPandaFlowDb")
+    options.UseNpgsql(connectionString)
 );
 
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -103,6 +107,12 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<RedPandaFlowDbContext>();
+    db.Database.Migrate();
+}
 
 app.UseSwagger();
 app.UseSwaggerUI(options =>
