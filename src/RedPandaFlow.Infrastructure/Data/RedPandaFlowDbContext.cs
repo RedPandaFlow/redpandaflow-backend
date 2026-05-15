@@ -11,6 +11,8 @@ namespace RedPandaFlow.Infrastructure.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<Workspace> Workspaces { get; set; }
+        public DbSet<WorkspaceUser> WorkspaceUsers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -40,6 +42,39 @@ namespace RedPandaFlow.Infrastructure.Data
 
                 entity.HasOne(e => e.User)
                       .WithMany(u => u.RefreshTokens)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Workspace>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(25);
+                entity.Property(e => e.Description).HasColumnType("text");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(e => e.Owner)
+                      .WithMany()
+                      .HasForeignKey(e => e.OwnerId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<WorkspaceUser>(entity =>
+            {
+                entity.HasKey(e => new { e.WorkspaceId, e.UserId });
+                entity.Property(e => e.Role)
+                      .HasConversion<string>()
+                      .HasMaxLength(25)
+                      .IsRequired();
+
+                entity.HasOne(e => e.Workspace)
+                      .WithMany(w => w.Members)
+                      .HasForeignKey(e => e.WorkspaceId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                      .WithMany()
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
