@@ -67,13 +67,13 @@ namespace RedPandaFlow.Infrastructure.Services
             workspace.Members.Add(new WorkspaceUser
             {
                 UserId = userId,
-                Role = WorkspaceRole.Admin
+                Role = Role.Admin
             });
 
             _context.Workspaces.Add(workspace);
             await _context.SaveChangesAsync();
 
-            return ServiceResult<WorkspaceDto>.Ok(ToDto(workspace, WorkspaceRole.Admin), "Workspace created.");
+            return ServiceResult<WorkspaceDto>.Ok(ToDto(workspace, Role.Admin), "Workspace created.");
         }
 
         public async Task<ServiceResult<WorkspaceDto>> UpdateAsync(Guid workspaceId, UpdateWorkspaceRequest request, Guid userId)
@@ -93,7 +93,7 @@ namespace RedPandaFlow.Infrastructure.Services
                 return ServiceResult<WorkspaceDto>.Fail("Workspace not found.", ServiceErrorType.NotFound);
             }
 
-            if (membership.Role != WorkspaceRole.Admin)
+            if (membership.Role != Role.Admin)
             {
                 return ServiceResult<WorkspaceDto>.Fail("Only an admin can update this workspace.", ServiceErrorType.Forbidden);
             }
@@ -157,7 +157,7 @@ namespace RedPandaFlow.Infrastructure.Services
             }
 
             var caller = workspace.Members.First(m => m.UserId == userId);
-            if (caller.Role != WorkspaceRole.Admin)
+            if (caller.Role != Role.Admin)
             {
                 return ServiceResult<WorkspaceMemberDto>.Fail("Only an admin can invite members.", ServiceErrorType.Forbidden);
             }
@@ -200,7 +200,7 @@ namespace RedPandaFlow.Infrastructure.Services
             }
 
             var caller = workspace.Members.First(m => m.UserId == userId);
-            if (caller.Role != WorkspaceRole.Admin)
+            if (caller.Role != Role.Admin)
             {
                 return ServiceResult<WorkspaceMemberDto>.Fail("Only an admin can change member roles.", ServiceErrorType.Forbidden);
             }
@@ -240,7 +240,7 @@ namespace RedPandaFlow.Infrastructure.Services
 
             var caller = workspace.Members.First(m => m.UserId == userId);
             var isSelf = memberUserId == userId;
-            if (caller.Role != WorkspaceRole.Admin && !isSelf)
+            if (caller.Role != Role.Admin && !isSelf)
             {
                 return ServiceResult<bool>.Fail("Only an admin can remove members.", ServiceErrorType.Forbidden);
             }
@@ -257,7 +257,7 @@ namespace RedPandaFlow.Infrastructure.Services
             return ServiceResult<bool>.Ok(true, isSelf ? "You left the workspace." : "Member removed.");
         }
 
-        private static WorkspaceDto ToDto(Workspace workspace, WorkspaceRole currentUserRole) => new()
+        private static WorkspaceDto ToDto(Workspace workspace, Role currentUserRole) => new()
         {
             Id = workspace.Id,
             Name = workspace.Name,
