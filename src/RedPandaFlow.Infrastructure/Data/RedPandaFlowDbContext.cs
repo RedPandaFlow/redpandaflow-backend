@@ -14,6 +14,7 @@ namespace RedPandaFlow.Infrastructure.Data
         public DbSet<Workspace> Workspaces { get; set; }
         public DbSet<WorkspaceUser> WorkspaceUsers { get; set; }
         public DbSet<Board> Boards { get; set; }
+        public DbSet<BoardUser> BoardUser { get; set; }
         public DbSet<Column> Columns { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -116,7 +117,7 @@ namespace RedPandaFlow.Infrastructure.Data
                       .IsRequired();
 
                 entity.HasOne(e => e.Board)
-                    .WithMany()
+                    .WithMany(b => b.Members)
                     .HasForeignKey(e => e.BoardId)
                     .OnDelete(DeleteBehavior.Cascade);
 
