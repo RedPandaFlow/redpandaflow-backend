@@ -16,6 +16,7 @@ namespace RedPandaFlow.Infrastructure.Data
         public DbSet<Board> Boards { get; set; }
         public DbSet<BoardUser> BoardUser { get; set; }
         public DbSet<Column> Columns { get; set; }
+        public DbSet<Card> Cards {get; set;}
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -125,6 +126,22 @@ namespace RedPandaFlow.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<Card>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(25);
+                entity.Property(e => e.Description).HasColumnType("text");
+                entity.Property(e => e.DueDate);
+                entity.Property(e => e.Order).IsRequired();
+                entity.Property(e => e.IsArchived).HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(e => e.Column)
+                      .WithMany(c => c.Cards)
+                      .HasForeignKey(e => e.ColumnId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
