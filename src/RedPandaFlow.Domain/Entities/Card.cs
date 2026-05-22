@@ -1,15 +1,18 @@
+using System.Globalization;
+
 namespace RedPandaFlow.Domain.Entities
 {
-    public class Column
+    public class Card
     {
         public Guid Id { get; set; }
-        public Guid BoardId { get; set; }
+        public Guid ColumnId { get; set; }
         public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public DateTime? DueDate { get; set; }
         public int Order { get; set; }
         public bool IsArchived { get; set; } = false;
         public DateTime CreatedAt { get; set; }
 
-        public Board Board { get; set; } = null!;
-        public ICollection<Card> Cards { get; set; } = new List<Card>();
+        public Column Column { get; set; } = null!;
     }
 }
