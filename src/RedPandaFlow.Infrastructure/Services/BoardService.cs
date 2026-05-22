@@ -22,17 +22,26 @@ namespace RedPandaFlow.Infrastructure.Services
         }
         public async Task<ServiceResult<List<BoardDto>>> GetBoardsByWorkspaceIdAsync(Guid workspaceId, Guid userId)
         {
-            // Vérifie que l'utilisateur est membre du workspace
-            var isMember = await _dbContext.WorkspaceUsers
+            var isWorkspaceMember = await _dbContext.WorkspaceUsers
                 .AnyAsync(wu => wu.WorkspaceId == workspaceId && wu.UserId == userId);
 
-            if (!isMember)
+            var boardMemberBoardIds = await _dbContext.BoardUser
+                .Where(bu => bu.UserId == userId && bu.Board.WorkspaceId == workspaceId)
+                .Select(bu => bu.BoardId)
+                .ToListAsync();
+
+            if (!isWorkspaceMember && boardMemberBoardIds.Count == 0)
             {
                 return ServiceResult<List<BoardDto>>.Fail("Workspace not found.", ServiceErrorType.NotFound);
             }
 
-            var boards = await _dbContext.Boards
-                .Where(b => b.WorkspaceId == workspaceId)
+            var query = _dbContext.Boards.Where(b => b.WorkspaceId == workspaceId);
+            if (!isWorkspaceMember)
+            {
+                query = query.Where(b => boardMemberBoardIds.Contains(b.Id));
+            }
+
+            var boards = await query
                 .Include(b => b.Columns.OrderBy(c => c.Order))
                 .OrderBy(b => b.Title)
                 .Select(b => ToDto(b))

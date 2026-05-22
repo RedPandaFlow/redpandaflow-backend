@@ -22,7 +22,7 @@ namespace RedPandaFlow.Infrastructure.Services
 
         public async Task<ServiceResult<List<WorkspaceDto>>> GetUserWorkspacesAsync(Guid userId)
         {
-            var workspaces = await _context.WorkspaceUsers
+            var memberWorkspaces = await _context.WorkspaceUsers
                 .Where(wu => wu.UserId == userId)
                 .Select(wu => new WorkspaceDto
                 {
@@ -34,25 +34,60 @@ namespace RedPandaFlow.Infrastructure.Services
                     CurrentUserRole = wu.Role,
                     MemberCount = wu.Workspace.Members.Count
                 })
-                .OrderBy(w => w.Name)
                 .ToListAsync();
 
-            return ServiceResult<List<WorkspaceDto>>.Ok(workspaces);
+            var memberWorkspaceIds = memberWorkspaces.Select(w => w.Id).ToHashSet();
+
+            var guestWorkspaces = await _context.BoardUser
+                .Where(bu => bu.UserId == userId && !memberWorkspaceIds.Contains(bu.Board.WorkspaceId))
+                .Select(bu => bu.Board.Workspace)
+                .Distinct()
+                .Select(w => new WorkspaceDto
+                {
+                    Id = w.Id,
+                    Name = w.Name,
+                    Description = w.Description,
+                    OwnerId = w.OwnerId,
+                    CreatedAt = w.CreatedAt,
+                    CurrentUserRole = null,
+                    MemberCount = w.Members.Count
+                })
+                .ToListAsync();
+
+            var all = memberWorkspaces
+                .Concat(guestWorkspaces)
+                .OrderBy(w => w.Name)
+                .ToList();
+
+            return ServiceResult<List<WorkspaceDto>>.Ok(all);
         }
 
         public async Task<ServiceResult<WorkspaceDto>> GetByIdAsync(Guid workspaceId, Guid userId)
         {
-            var membership = await _context.WorkspaceUsers
-                .Include(wu => wu.Workspace)
-                .ThenInclude(w => w.Members)
-                .FirstOrDefaultAsync(wu => wu.WorkspaceId == workspaceId && wu.UserId == userId);
+            var workspace = await _context.Workspaces
+                .Include(w => w.Members)
+                .FirstOrDefaultAsync(w => w.Id == workspaceId);
 
-            if (membership == null)
+            if (workspace == null)
             {
                 return ServiceResult<WorkspaceDto>.Fail("Workspace not found.", ServiceErrorType.NotFound);
             }
 
-            return ServiceResult<WorkspaceDto>.Ok(ToDto(membership.Workspace, membership.Role));
+            var membership = workspace.Members.FirstOrDefault(m => m.UserId == userId);
+            if (membership != null)
+            {
+                return ServiceResult<WorkspaceDto>.Ok(ToDto(workspace, membership.Role));
+            }
+
+            var hasBoardAccess = await _context.BoardUser
+                .AnyAsync(bu => bu.UserId == userId && bu.Board.WorkspaceId == workspaceId);
+
+            if (!hasBoardAccess)
+            {
+                return ServiceResult<WorkspaceDto>.Fail("Workspace not found.", ServiceErrorType.NotFound);
+            }
+
+            return ServiceResult<WorkspaceDto>.Ok(ToDto(workspace, null));
         }
 
         public async Task<ServiceResult<WorkspaceDto>> CreateAsync(CreateWorkspaceRequest request, Guid userId)
@@ -136,13 +171,43 @@ namespace RedPandaFlow.Infrastructure.Services
                 return ServiceResult<List<WorkspaceMemberDto>>.Fail("Workspace not found.", ServiceErrorType.NotFound);
             }
 
-            var members = workspace.Members
-                .Select(m => ToMemberDto(m, workspace.OwnerId))
+            var boardMemberships = await _context.BoardUser
+                .Include(bu => bu.User)
+                .Where(bu => bu.Board.WorkspaceId == workspaceId)
+                .ToListAsync();
+
+            var boardIdsByUserId = boardMemberships
+                .GroupBy(bu => bu.UserId)
+                .ToDictionary(g => g.Key, g => g.Select(bu => bu.BoardId).ToList());
+
+            var workspaceMembers = workspace.Members
+                .Select(m => ToMemberDto(m, workspace.OwnerId,
+                    boardIdsByUserId.TryGetValue(m.UserId, out var ids) ? ids : new List<Guid>()))
+                .ToList();
+
+            var workspaceMemberIds = workspace.Members.Select(m => m.UserId).ToHashSet();
+
+            var guests = boardMemberships
+                .Where(bu => !workspaceMemberIds.Contains(bu.UserId))
+                .GroupBy(bu => bu.UserId)
+                .Select(g => new WorkspaceMemberDto
+                {
+                    UserId = g.Key,
+                    Username = g.First().User?.Username ?? string.Empty,
+                    Email = g.First().User?.Email ?? string.Empty,
+                    Role = null,
+                    IsOwner = false,
+                    BoardIds = g.Select(bu => bu.BoardId).ToList()
+                })
+                .ToList();
+
+            var all = workspaceMembers
+                .Concat(guests)
                 .OrderByDescending(m => m.IsOwner)
                 .ThenBy(m => m.Username)
                 .ToList();
 
-            return ServiceResult<List<WorkspaceMemberDto>>.Ok(members);
+            return ServiceResult<List<WorkspaceMemberDto>>.Ok(all);
         }
 
         public async Task<ServiceResult<WorkspaceMemberDto>> InviteMemberAsync(Guid workspaceId, InviteMemberRequest request, Guid userId)
@@ -257,7 +322,7 @@ namespace RedPandaFlow.Infrastructure.Services
             return ServiceResult<bool>.Ok(true, isSelf ? "You left the workspace." : "Member removed.");
         }
 
-        private static WorkspaceDto ToDto(Workspace workspace, Role currentUserRole) => new()
+        private static WorkspaceDto ToDto(Workspace workspace, Role? currentUserRole) => new()
         {
             Id = workspace.Id,
             Name = workspace.Name,
@@ -268,13 +333,14 @@ namespace RedPandaFlow.Infrastructure.Services
             MemberCount = workspace.Members.Count
         };
 
-        private static WorkspaceMemberDto ToMemberDto(WorkspaceUser member, Guid ownerId) => new()
+        private static WorkspaceMemberDto ToMemberDto(WorkspaceUser member, Guid ownerId, List<Guid>? boardIds = null) => new()
         {
             UserId = member.UserId,
             Username = member.User?.Username ?? string.Empty,
             Email = member.User?.Email ?? string.Empty,
             Role = member.Role,
-            IsOwner = member.UserId == ownerId
+            IsOwner = member.UserId == ownerId,
+            BoardIds = boardIds ?? new List<Guid>()
         };
     }
 }
