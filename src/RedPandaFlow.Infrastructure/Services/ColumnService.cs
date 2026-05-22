@@ -41,7 +41,30 @@ namespace RedPandaFlow.Infrastructure.Services
             }
 
             var columns = board.Columns
+                .Where(c => !c.IsArchived)
                 .OrderBy(c => c.Order)
+                .Select(c => ToDto(c))
+                .ToList();
+
+            return ServiceResult<List<ColumnDto>>.Ok(columns);
+        }
+
+        public async Task<ServiceResult<List<ColumnDto>>> GetArchivedColumnsByBoardIdAsync(Guid boardId, Guid userId)
+        {
+            var board = await _dbContext.Boards
+                .Include(b => b.Members)
+                .Include(b => b.Workspace).ThenInclude(w => w.Members)
+                .Include(b => b.Columns)
+                .FirstOrDefaultAsync(b => b.Id == boardId);
+
+            if (board == null || EffectiveRole(board, userId) == null)
+            {
+                return ServiceResult<List<ColumnDto>>.Fail("Board not found.", ServiceErrorType.NotFound);
+            }
+
+            var columns = board.Columns
+                .Where(c => c.IsArchived)
+                .OrderBy(c => c.Title)
                 .Select(c => ToDto(c))
                 .ToList();
 
@@ -212,6 +235,49 @@ namespace RedPandaFlow.Infrastructure.Services
 
             return ServiceResult<bool>.Ok(true, "Column order updated.");
         }
+        public async Task<ServiceResult<ColumnDto>> ArchiveColumnAsync(Guid columnId, Guid userId)
+        {
+            return await SetArchivedAsync(columnId, userId, true);
+        }
+
+        public async Task<ServiceResult<ColumnDto>> RestoreColumnAsync(Guid columnId, Guid userId)
+        {
+            return await SetArchivedAsync(columnId, userId, false);
+        }
+
+        private async Task<ServiceResult<ColumnDto>> SetArchivedAsync(Guid columnId, Guid userId, bool archived)
+        {
+            var column = await _dbContext.Columns
+                .Include(c => c.Board).ThenInclude(b => b.Members)
+                .Include(c => c.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
+                .FirstOrDefaultAsync(c => c.Id == columnId);
+
+            if (column == null)
+            {
+                return ServiceResult<ColumnDto>.Fail("Column not found.", ServiceErrorType.NotFound);
+            }
+
+            var role = EffectiveRole(column.Board, userId);
+            if (role == null)
+            {
+                return ServiceResult<ColumnDto>.Fail("Column not found.", ServiceErrorType.NotFound);
+            }
+            if (role == Role.Viewer)
+            {
+                return ServiceResult<ColumnDto>.Fail("Viewers cannot archive columns.", ServiceErrorType.Forbidden);
+            }
+
+            if (column.IsArchived == archived)
+            {
+                return ServiceResult<ColumnDto>.Ok(ToDto(column));
+            }
+
+            column.IsArchived = archived;
+            await _dbContext.SaveChangesAsync();
+
+            return ServiceResult<ColumnDto>.Ok(ToDto(column), archived ? "Column archived." : "Column restored.");
+        }
+
         public static ColumnDto ToDto(Column column) => new()
         {
             Id = column.Id,

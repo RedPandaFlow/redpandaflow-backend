@@ -42,7 +42,7 @@ namespace RedPandaFlow.Infrastructure.Services
             }
 
             var boards = await query
-                .Include(b => b.Columns.OrderBy(c => c.Order))
+                .Include(b => b.Columns.Where(c => !c.IsArchived).OrderBy(c => c.Order))
                 .OrderBy(b => b.Title)
                 .Select(b => ToDto(b))
                 .ToListAsync();
@@ -52,7 +52,7 @@ namespace RedPandaFlow.Infrastructure.Services
         public async Task<ServiceResult<BoardDto>> GetBoardByIdAsync(Guid boardId, Guid userId)
         {
             var board = await _dbContext.Boards
-                .Include(b => b.Columns.OrderBy(c => c.Order))
+                .Include(b => b.Columns.Where(c => !c.IsArchived).OrderBy(c => c.Order))
                 .Include(b => b.Members)
                 .FirstOrDefaultAsync(b => b.Id == boardId);
 
@@ -108,7 +108,7 @@ namespace RedPandaFlow.Infrastructure.Services
         public async Task<ServiceResult<BoardDto>> UpdateBoardAsync(Guid boardId, Guid userId, UpdateBoardRequest request)
         {
             var board = await _dbContext.Boards
-                .Include(b => b.Columns.OrderBy(c => c.Order))
+                .Include(b => b.Columns.Where(c => !c.IsArchived).OrderBy(c => c.Order))
                 .Include(b => b.Members)
                 .FirstOrDefaultAsync(b => b.Id == boardId);
 
