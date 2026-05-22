@@ -99,7 +99,7 @@ namespace RedPandaFlow.Api.Controllers
         }
 
         [HttpGet("/api/workspaces/{workspaceId:guid}/boards/{boardId:guid}/cards/archived")]
-        public async Task<IActionResult> GetArchivedCards(Guid workspaceId, Guid boardId)
+        public async Task<IActionResult> GetArchivedCardsByBoard(Guid workspaceId, Guid boardId)
         {
             if (!TryGetUserId(out var userId))
                 return Unauthorized();
@@ -108,7 +108,7 @@ namespace RedPandaFlow.Api.Controllers
             return ToActionResult(result);
         }
         [HttpGet("archived")]
-        public async Task<IActionResult> GetArchivedCards(Guid workspaceId, Guid boardId, Guid columnId)
+        public async Task<IActionResult> GetArchivedCardsByColumn(Guid workspaceId, Guid boardId, Guid columnId)
         {
             if (!TryGetUserId(out var userId))
                 return Unauthorized();
