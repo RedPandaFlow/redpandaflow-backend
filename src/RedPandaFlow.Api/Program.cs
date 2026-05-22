@@ -2,11 +2,11 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using RedPandaFlow.Application.Interfaces.Services;
+using RedPandaFlow.Application.Services;
 using RedPandaFlow.Infrastructure.Config;
 using RedPandaFlow.Infrastructure.Data;
 using RedPandaFlow.Infrastructure.Services;
@@ -65,6 +65,7 @@ builder.Services.AddDbContext<RedPandaFlowDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IWorkspaceService, WorkspaceService>();
+builder.Services.AddScoped<IBoardService, BoardService>();
 
 builder.Services.AddAuthentication(options =>
 {

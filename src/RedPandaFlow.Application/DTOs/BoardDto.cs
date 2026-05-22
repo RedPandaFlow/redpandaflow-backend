@@ -1,19 +1,16 @@
 using RedPandaFlow.Domain.Enums;
-
 namespace RedPandaFlow.Application.DTOs
 {
-    public class WorkspaceDto
+    public class BoardDto
     {
         public Guid Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public Guid OwnerId { get; set; }
+        public Guid WorkspaceId { get; set; }
+        public string Title { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public Role CurrentUserRole { get; set; }
-        public int MemberCount { get; set; }
+        public List<ColumnDto> Columns { get; set; } = new List<ColumnDto>();
     }
 
-    public class WorkspaceMemberDto
+    public class BoardMemberDto
     {
         public Guid UserId { get; set; }
         public string Username { get; set; } = string.Empty;

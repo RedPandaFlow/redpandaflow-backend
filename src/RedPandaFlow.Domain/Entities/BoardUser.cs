@@ -2,13 +2,13 @@ using RedPandaFlow.Domain.Enums;
 
 namespace RedPandaFlow.Domain.Entities
 {
-    public class WorkspaceUser
+    public class BoardUser
     {
-        public Guid WorkspaceId { get; set; }
+        public Guid BoardId { get; set; }
         public Guid UserId { get; set; }
         public Role Role { get; set; }
 
-        public Workspace Workspace { get; set; } = null!;
+        public Board Board { get; set; } = null!;
         public User User { get; set; } = null!;
     }
 }
