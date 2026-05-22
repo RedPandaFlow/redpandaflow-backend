@@ -20,14 +20,22 @@ namespace RedPandaFlow.Infrastructure.Services
             _logger = logger;
         }
 
+        private static Role? EffectiveRole(Board board, Guid userId)
+        {
+            var boardRole = board.Members.FirstOrDefault(m => m.UserId == userId)?.Role;
+            if (boardRole != null) return boardRole;
+            return board.Workspace?.Members.FirstOrDefault(m => m.UserId == userId)?.Role;
+        }
+
         public async Task<ServiceResult<List<ColumnDto>>> GetColumnsByBoardIdAsync(Guid boardId, Guid userId)
         {
             var board = await _dbContext.Boards
                 .Include(b => b.Members)
+                .Include(b => b.Workspace).ThenInclude(w => w.Members)
                 .Include(b => b.Columns)
                 .FirstOrDefaultAsync(b => b.Id == boardId);
 
-            if (board == null || board.Members.All(m => m.UserId != userId))
+            if (board == null || EffectiveRole(board, userId) == null)
             {
                 return ServiceResult<List<ColumnDto>>.Fail("Board not found.", ServiceErrorType.NotFound);
             }
@@ -43,11 +51,11 @@ namespace RedPandaFlow.Infrastructure.Services
         public async Task<ServiceResult<ColumnDto>> GetColumnByIdAsync(Guid columnId, Guid userId)
         {
             var column = await _dbContext.Columns
-                .Include(c => c.Board)
-                    .ThenInclude(b => b.Members)
+                .Include(c => c.Board).ThenInclude(b => b.Members)
+                .Include(c => c.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
                 .FirstOrDefaultAsync(c => c.Id == columnId);
 
-            if (column == null || column.Board.Members.All(m => m.UserId != userId))
+            if (column == null || EffectiveRole(column.Board, userId) == null)
             {
                 return ServiceResult<ColumnDto>.Fail("Column not found.", ServiceErrorType.NotFound);
             }
@@ -59,12 +67,23 @@ namespace RedPandaFlow.Infrastructure.Services
         {
             var board = await _dbContext.Boards
                 .Include(b => b.Members)
+                .Include(b => b.Workspace).ThenInclude(w => w.Members)
                 .Include(b => b.Columns)
                 .FirstOrDefaultAsync(b => b.Id == boardId);
 
-            if (board == null || board.Members.All(m => m.UserId != userId))
+            if (board == null)
             {
                 return ServiceResult<ColumnDto>.Fail("Board not found.", ServiceErrorType.NotFound);
+            }
+
+            var role = EffectiveRole(board, userId);
+            if (role == null)
+            {
+                return ServiceResult<ColumnDto>.Fail("Board not found.", ServiceErrorType.NotFound);
+            }
+            if (role == Role.Viewer)
+            {
+                return ServiceResult<ColumnDto>.Fail("Viewers cannot create columns.", ServiceErrorType.Forbidden);
             }
 
             var nextOrder = board.Columns.Any() ? board.Columns.Max(c => c.Order) + 1 : 0;
@@ -87,13 +106,23 @@ namespace RedPandaFlow.Infrastructure.Services
         public async Task<ServiceResult<ColumnDto>> UpdateColumnAsync(Guid columnId, Guid userId, UpdateColumnRequest request)
         {
             var column = await _dbContext.Columns
-                .Include(c => c.Board)
-                    .ThenInclude(b => b.Members)
+                .Include(c => c.Board).ThenInclude(b => b.Members)
+                .Include(c => c.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
                 .FirstOrDefaultAsync(c => c.Id == columnId);
 
-            if (column == null || column.Board.Members.All(m => m.UserId != userId))
+            if (column == null)
             {
                 return ServiceResult<ColumnDto>.Fail("Column not found.", ServiceErrorType.NotFound);
+            }
+
+            var role = EffectiveRole(column.Board, userId);
+            if (role == null)
+            {
+                return ServiceResult<ColumnDto>.Fail("Column not found.", ServiceErrorType.NotFound);
+            }
+            if (role == Role.Viewer)
+            {
+                return ServiceResult<ColumnDto>.Fail("Viewers cannot edit columns.", ServiceErrorType.Forbidden);
             }
 
             column.Title = request.Title.Trim();
@@ -106,19 +135,23 @@ namespace RedPandaFlow.Infrastructure.Services
         public async Task<ServiceResult<bool>> DeleteColumnAsync(Guid columnId, Guid userId)
         {
             var column = await _dbContext.Columns
-                .Include(c => c.Board)
-                    .ThenInclude(b => b.Members)
+                .Include(c => c.Board).ThenInclude(b => b.Members)
+                .Include(c => c.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
                 .FirstOrDefaultAsync(c => c.Id == columnId);
 
-            if (column == null || column.Board.Members.All(m => m.UserId != userId))
+            if (column == null)
             {
                 return ServiceResult<bool>.Fail("Column not found.", ServiceErrorType.NotFound);
             }
 
-            var caller = column.Board.Members.FirstOrDefault(m => m.UserId == userId);
-            if (caller?.Role != Role.Admin)
+            var role = EffectiveRole(column.Board, userId);
+            if (role == null)
             {
-                return ServiceResult<bool>.Fail("Only an admin can delete columns.", ServiceErrorType.Forbidden);
+                return ServiceResult<bool>.Fail("Column not found.", ServiceErrorType.NotFound);
+            }
+            if (role == Role.Viewer)
+            {
+                return ServiceResult<bool>.Fail("Viewers cannot delete columns.", ServiceErrorType.Forbidden);
             }
 
             _dbContext.Columns.Remove(column);
@@ -130,15 +163,24 @@ namespace RedPandaFlow.Infrastructure.Services
         public async Task<ServiceResult<bool>> UpdateColumnOrderAsync(Guid columnId, Guid userId, UpdateColumnOrderRequest request)
         {
             var column = await _dbContext.Columns
-                .Include(c => c.Board)
-                    .ThenInclude(b => b.Columns)
-                .Include(c => c.Board)
-                    .ThenInclude(b => b.Members)
+                .Include(c => c.Board).ThenInclude(b => b.Columns)
+                .Include(c => c.Board).ThenInclude(b => b.Members)
+                .Include(c => c.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
                 .FirstOrDefaultAsync(c => c.Id == columnId);
 
-            if (column == null || column.Board.Members.All(m => m.UserId != userId))
+            if (column == null)
             {
                 return ServiceResult<bool>.Fail("Column not found.", ServiceErrorType.NotFound);
+            }
+
+            var role = EffectiveRole(column.Board, userId);
+            if (role == null)
+            {
+                return ServiceResult<bool>.Fail("Column not found.", ServiceErrorType.NotFound);
+            }
+            if (role == Role.Viewer)
+            {
+                return ServiceResult<bool>.Fail("Viewers cannot reorder columns.", ServiceErrorType.Forbidden);
             }
 
             var board = column.Board;
