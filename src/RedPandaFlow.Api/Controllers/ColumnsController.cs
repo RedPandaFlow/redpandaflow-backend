@@ -88,6 +88,36 @@ namespace RedPandaFlow.Api.Controllers
             return ToActionResult(result);
         }
 
+        [HttpGet("archived")]
+        public async Task<IActionResult> GetArchived(Guid boardId)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var result = await _columnService.GetArchivedColumnsByBoardIdAsync(boardId, userId);
+            return ToActionResult(result);
+        }
+
+        [HttpPost("{columnId:guid}/archive")]
+        public async Task<IActionResult> Archive(Guid columnId)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var result = await _columnService.ArchiveColumnAsync(columnId, userId);
+            return ToActionResult(result);
+        }
+
+        [HttpPost("{columnId:guid}/restore")]
+        public async Task<IActionResult> Restore(Guid columnId)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var result = await _columnService.RestoreColumnAsync(columnId, userId);
+            return ToActionResult(result);
+        }
+
         private bool TryGetUserId(out Guid userId)
         {
             return Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
