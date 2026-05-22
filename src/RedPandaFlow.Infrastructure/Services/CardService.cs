@@ -42,6 +42,7 @@ namespace RedPandaFlow.Infrastructure.Services
 
             var cards = board.Columns
                 .SelectMany(c => c.Cards)
+                .Where(c => !c.IsArchived)
                 .OrderBy(c => c.Order)
                 .Select(c => ToDto(c))
                 .ToList();
@@ -59,6 +60,7 @@ namespace RedPandaFlow.Infrastructure.Services
             }
 
             var cards = column.Cards
+                .Where(c => !c.IsArchived)
                 .OrderBy(c => c.Order)
                 .Select(c => ToDto(c))
                 .ToList();
@@ -266,6 +268,87 @@ namespace RedPandaFlow.Infrastructure.Services
                     && c.ColumnId == columnId
                     && c.Column.BoardId == boardId
                     && c.Column.Board.WorkspaceId == workspaceId);
+        }
+
+        public async Task<ServiceResult<List<CardDto>>> GetArchivedCardsByColumnIdAsync(Guid workspaceId, Guid boardId, Guid columnId, Guid userId)
+        {
+            var column = await GetColumnWithAccessAsync(workspaceId, boardId, columnId);
+
+            if (column == null || EffectiveRole(column.Board, userId) == null)
+            {
+                return ServiceResult<List<CardDto>>.Fail("Column not found.", ServiceErrorType.NotFound);
+            }
+
+            var cards = column.Cards
+                .Where(c => c.IsArchived)
+                .OrderBy(c => c.Title)
+                .Select(c => ToDto(c))
+                .ToList();
+
+            return ServiceResult<List<CardDto>>.Ok(cards);
+        }
+
+        public async Task<ServiceResult<CardDto>> ArchiveCardAsync(Guid workspaceId, Guid boardId, Guid columnId, Guid cardId, Guid userId)
+        {
+            return await SetArchivedAsync(workspaceId, boardId, columnId, cardId, userId, true);
+        }
+
+        public async Task<ServiceResult<CardDto>> RestoreCardAsync(Guid workspaceId, Guid boardId, Guid columnId, Guid cardId, Guid userId)
+        {
+            return await SetArchivedAsync(workspaceId, boardId, columnId, cardId, userId, false);
+        }
+
+        private async Task<ServiceResult<CardDto>> SetArchivedAsync(Guid workspaceId, Guid boardId, Guid columnId, Guid cardId, Guid userId, bool archived)
+        {
+            var card = await GetCardWithAccessAsync(workspaceId, boardId, columnId, cardId);
+
+            if (card == null)
+            {
+                return ServiceResult<CardDto>.Fail("Card not found.", ServiceErrorType.NotFound);
+            }
+
+            var role = EffectiveRole(card.Column.Board, userId);
+            if (role == null)
+            {
+                return ServiceResult<CardDto>.Fail("Card not found.", ServiceErrorType.NotFound);
+            }
+            if (role == Role.Viewer)
+            {
+                return ServiceResult<CardDto>.Fail("Viewers cannot archive cards.", ServiceErrorType.Forbidden);
+            }
+
+            if (card.IsArchived == archived)
+            {
+                return ServiceResult<CardDto>.Ok(ToDto(card));
+            }
+
+            card.IsArchived = archived;
+            await _dbContext.SaveChangesAsync();
+
+            return ServiceResult<CardDto>.Ok(ToDto(card), archived ? "Card archived." : "Card restored.");
+        }
+
+        public async Task<ServiceResult<List<CardDto>>> GetArchivedCardsByBoardIdAsync(Guid workspaceId, Guid boardId, Guid userId)
+        {
+            var board = await _dbContext.Boards
+                .Include(b => b.Members)
+                .Include(b => b.Workspace).ThenInclude(w => w.Members)
+                .Include(b => b.Columns).ThenInclude(c => c.Cards)
+                .FirstOrDefaultAsync(b => b.Id == boardId && b.WorkspaceId == workspaceId);
+
+            if (board == null || EffectiveRole(board, userId) == null)
+            {
+                return ServiceResult<List<CardDto>>.Fail("Board not found.", ServiceErrorType.NotFound);
+            }
+
+            var cards = board.Columns
+                .SelectMany(c => c.Cards)
+                .Where(c => c.IsArchived)
+                .OrderBy(c => c.Title)
+                .Select(c => ToDto(c))
+                .ToList();
+
+            return ServiceResult<List<CardDto>>.Ok(cards);
         }
 
         public static CardDto ToDto(Card card) => new()
