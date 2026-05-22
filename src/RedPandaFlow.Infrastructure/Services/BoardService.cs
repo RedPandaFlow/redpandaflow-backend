@@ -82,6 +82,7 @@ namespace RedPandaFlow.Infrastructure.Services
             {
                 WorkspaceId = workspaceId,
                 Title = request.Title.Trim(),
+                OwnerId = userId,
                 CreatedAt = DateTime.UtcNow
             };
             board.Members.Add(new BoardUser
