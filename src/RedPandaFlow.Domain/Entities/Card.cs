@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace RedPandaFlow.Domain.Entities
 {
     public class Card
@@ -14,5 +12,6 @@ namespace RedPandaFlow.Domain.Entities
         public DateTime CreatedAt { get; set; }
 
         public Column Column { get; set; } = null!;
+        public ICollection<CardUser> CardUsers { get; set; } = new List<CardUser>();
     }
 }

@@ -11,5 +11,6 @@ namespace RedPandaFlow.Domain.Entities
         public DateTime CreatedAt { get; set; }
 
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+        public ICollection<CardUser> CardUsers { get; set; } = new List<CardUser>();
     }
 }
