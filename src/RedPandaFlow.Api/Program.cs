@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using RedPandaFlow.Api.Auth;
 using RedPandaFlow.Api.Hubs;
 using RedPandaFlow.Application.Interfaces.Services;
 using RedPandaFlow.Application.Services;
@@ -96,11 +97,10 @@ builder.Services.AddAuthentication(options =>
     {
         OnMessageReceived = context =>
         {
-            var accessToken = context.Request.Query["access_token"];
-            var path = context.HttpContext.Request.Path;
-            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            var cookie = context.Request.Cookies[AuthCookies.AccessTokenCookie];
+            if (!string.IsNullOrEmpty(cookie))
             {
-                context.Token = accessToken;
+                context.Token = cookie;
             }
             return Task.CompletedTask;
         }
@@ -141,6 +141,19 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<RedPandaFlowDbContext>();
     db.Database.Migrate();
 }
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    await next();
+});
 
 app.UseSwagger();
 app.UseSwaggerUI(options =>

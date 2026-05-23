@@ -2,8 +2,12 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using RedPandaFlow.Api.Auth;
 using RedPandaFlow.Application.DTOs;
 using RedPandaFlow.Application.Interfaces.Services;
+using RedPandaFlow.Infrastructure.Config;
+using RedPandaFlow.Infrastructure.Data;
 
 namespace RedPandaFlow.Api.Controllers
 {
@@ -12,11 +16,22 @@ namespace RedPandaFlow.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly JwtSettings _jwtSettings;
+        private readonly IWebHostEnvironment _env;
+        private readonly RedPandaFlowDbContext _db;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger)
+        public AuthController(
+            IAuthService authService,
+            JwtSettings jwtSettings,
+            IWebHostEnvironment env,
+            RedPandaFlowDbContext db,
+            ILogger<AuthController> logger)
         {
             _authService = authService;
+            _jwtSettings = jwtSettings;
+            _env = env;
+            _db = db;
             _logger = logger;
         }
 
@@ -24,71 +39,101 @@ namespace RedPandaFlow.Api.Controllers
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var result = await _authService.RegisterAsync(request);
+            if (!result.Success) return BadRequest(result);
 
-            if (!result.Success)
-            {
-                return BadRequest(result);
-            }
-
-            return Ok(result);
+            IssueCookies(result);
+            return Ok(StripTokens(result));
         }
 
         [HttpPost("login")]
         [EnableRateLimiting("auth")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var result = await _authService.LoginAsync(request);
+            if (!result.Success) return Unauthorized(result);
 
-            if (!result.Success)
-            {
-                return Unauthorized(result);
-            }
-
-            return Ok(result);
+            IssueCookies(result);
+            return Ok(StripTokens(result));
         }
 
         [HttpPost("refresh")]
         [EnableRateLimiting("auth")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+        public async Task<IActionResult> Refresh()
         {
-            if (!ModelState.IsValid)
+            var refreshToken = Request.Cookies[AuthCookies.RefreshTokenCookie];
+            if (string.IsNullOrEmpty(refreshToken))
             {
-                return BadRequest(ModelState);
+                return Unauthorized(new AuthResponse { Success = false, Message = "Missing refresh token." });
             }
 
-            var result = await _authService.RefreshTokenAsync(request.RefreshToken);
-
+            var result = await _authService.RefreshTokenAsync(refreshToken);
             if (!result.Success)
             {
+                AuthCookies.Clear(Response, _env);
                 return Unauthorized(result);
             }
 
-            return Ok(result);
+            IssueCookies(result);
+            return Ok(StripTokens(result));
+        }
+
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> Me()
+        {
+            if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null) return Unauthorized();
+
+            return Ok(new UserDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                Biography = user.Biography,
+                AvatarUrl = user.AvatarUrl,
+            });
         }
 
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> Logout()
         {
-            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(userIdClaim, out var userId))
+            if (Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             {
-                return Unauthorized();
+                await _authService.LogoutAsync(userId);
             }
 
-            var ok = await _authService.LogoutAsync(userId);
-            return ok ? NoContent() : StatusCode(500);
+            AuthCookies.Clear(Response, _env);
+            return NoContent();
         }
+
+        private void IssueCookies(AuthResponse result)
+        {
+            if (string.IsNullOrEmpty(result.AccessToken) || string.IsNullOrEmpty(result.RefreshToken))
+            {
+                _logger.LogWarning("Auth result reported success but tokens were missing.");
+                return;
+            }
+            AuthCookies.SetTokens(Response, result.AccessToken, result.RefreshToken, _jwtSettings, _env);
+        }
+
+        private static AuthResponse StripTokens(AuthResponse result) => new()
+        {
+            Success = result.Success,
+            Message = result.Message,
+            User = result.User,
+            AccessToken = null,
+            RefreshToken = null,
+        };
     }
 }
