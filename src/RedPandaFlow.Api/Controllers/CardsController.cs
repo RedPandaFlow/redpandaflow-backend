@@ -19,8 +19,18 @@ namespace RedPandaFlow.Api.Controllers
             _cardService = cardService;
         }
 
+        [HttpGet("/api/workspaces/{workspaceId:guid}/boards/{boardId:guid}/cards")]
+        public async Task<IActionResult> GetCardsByBoardId(Guid workspaceId, Guid boardId)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var result = await _cardService.GetCardsByBoardIdAsync(workspaceId, boardId, userId);
+            return ToActionResult(result);
+        }
+
         [HttpGet]
-        public async Task<IActionResult> GetCards(Guid workspaceId, Guid boardId, Guid columnId)
+        public async Task<IActionResult> GetCardsByColumnId(Guid workspaceId, Guid boardId, Guid columnId)
         {
             if (!TryGetUserId(out var userId))
                 return Unauthorized();
@@ -85,6 +95,45 @@ namespace RedPandaFlow.Api.Controllers
                 return Unauthorized();
 
             var result = await _cardService.UpdateCardOrderAsync(workspaceId, boardId, columnId, cardId, userId, request);
+            return ToActionResult(result);
+        }
+
+        [HttpGet("/api/workspaces/{workspaceId:guid}/boards/{boardId:guid}/cards/archived")]
+        public async Task<IActionResult> GetArchivedCardsByBoard(Guid workspaceId, Guid boardId)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var result = await _cardService.GetArchivedCardsByBoardIdAsync(workspaceId, boardId, userId);
+            return ToActionResult(result);
+        }
+        [HttpGet("archived")]
+        public async Task<IActionResult> GetArchivedCardsByColumn(Guid workspaceId, Guid boardId, Guid columnId)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var result = await _cardService.GetArchivedCardsByColumnIdAsync(workspaceId, boardId, columnId, userId);
+            return ToActionResult(result);
+        }
+
+        [HttpPatch("{cardId:guid}/archive")]
+        public async Task<IActionResult> Archive(Guid workspaceId, Guid boardId, Guid columnId, Guid cardId)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var result = await _cardService.ArchiveCardAsync(workspaceId, boardId, columnId, cardId, userId);
+            return ToActionResult(result);
+        }
+
+        [HttpPatch("{cardId:guid}/restore")]
+        public async Task<IActionResult> Restore(Guid workspaceId, Guid boardId, Guid columnId, Guid cardId)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+
+            var result = await _cardService.RestoreCardAsync(workspaceId, boardId, columnId, cardId, userId);
             return ToActionResult(result);
         }
 
