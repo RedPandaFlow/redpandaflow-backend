@@ -248,6 +248,7 @@ namespace RedPandaFlow.Infrastructure.Services
         private async Task<ServiceResult<ColumnDto>> SetArchivedAsync(Guid columnId, Guid userId, bool archived)
         {
             var column = await _dbContext.Columns
+                .Include(c => c.Cards)
                 .Include(c => c.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
                 .FirstOrDefaultAsync(c => c.Id == columnId);
@@ -273,8 +274,16 @@ namespace RedPandaFlow.Infrastructure.Services
             }
 
             column.IsArchived = archived;
-            await _dbContext.SaveChangesAsync();
 
+            if (column.Cards != null)
+            {
+                foreach (var card in column.Cards)
+                {
+                    card.IsArchived = archived;
+                }
+            }
+
+            await _dbContext.SaveChangesAsync();
             return ServiceResult<ColumnDto>.Ok(ToDto(column), archived ? "Column archived." : "Column restored.");
         }
 

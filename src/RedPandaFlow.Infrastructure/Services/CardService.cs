@@ -138,6 +138,7 @@ namespace RedPandaFlow.Infrastructure.Services
 
             card.Title = request.Title.Trim();
             card.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+            card.DueDate = request.DueDate;
             card.IsArchived = request.IsArchived;
             await _dbContext.SaveChangesAsync();
 
@@ -357,6 +358,7 @@ namespace RedPandaFlow.Infrastructure.Services
             ColumnId = card.ColumnId,
             Title = card.Title,
             Description = card.Description ?? string.Empty,
+            DueDate = card.DueDate,
             Order = card.Order,
             IsArchived = card.IsArchived,
             CreatedAt = card.CreatedAt
