@@ -161,6 +161,20 @@ namespace RedPandaFlow.Infrastructure.Data
                     .HasForeignKey(e => e.BoardId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+            modelBuilder.Entity<CardLabel>(entity =>
+            {
+                entity.HasKey(e => new { e.CardId, e.LabelId });
+
+                entity.HasOne(e => e.Card)
+                      .WithMany(c => c.CardLabels)
+                      .HasForeignKey(e => e.CardId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Label)
+                      .WithMany(l => l.CardLabels)
+                      .HasForeignKey(e => e.LabelId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }
