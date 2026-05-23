@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using RedPandaFlow.Api.Hubs;
 using RedPandaFlow.Application.Common;
 using RedPandaFlow.Application.DTOs;
 using RedPandaFlow.Application.Services;
@@ -13,10 +15,12 @@ namespace RedPandaFlow.Api.Controllers
     public class ColumnsController : ControllerBase
     {
         private readonly IColumnService _columnService;
+        private readonly IHubContext<BoardPresenceHub> _hub;
 
-        public ColumnsController(IColumnService columnService)
+        public ColumnsController(IColumnService columnService, IHubContext<BoardPresenceHub> hub)
         {
             _columnService = columnService;
+            _hub = hub;
         }
 
         [HttpGet]
@@ -49,11 +53,15 @@ namespace RedPandaFlow.Api.Controllers
                 return Unauthorized();
 
             var result = await _columnService.CreateColumnAsync(boardId, userId, request);
+            if (result.Success && result.Data != null)
+            {
+                await BroadcastAsync(boardId, "ColumnCreated", new { column = result.Data });
+            }
             return ToActionResult(result);
         }
 
         [HttpPut("{columnId:guid}")]
-        public async Task<IActionResult> Update(Guid columnId, [FromBody] UpdateColumnRequest request)
+        public async Task<IActionResult> Update(Guid boardId, Guid columnId, [FromBody] UpdateColumnRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -62,21 +70,29 @@ namespace RedPandaFlow.Api.Controllers
                 return Unauthorized();
 
             var result = await _columnService.UpdateColumnAsync(columnId, userId, request);
+            if (result.Success && result.Data != null)
+            {
+                await BroadcastAsync(boardId, "ColumnUpdated", new { column = result.Data });
+            }
             return ToActionResult(result);
         }
 
         [HttpDelete("{columnId:guid}")]
-        public async Task<IActionResult> Delete(Guid columnId)
+        public async Task<IActionResult> Delete(Guid boardId, Guid columnId)
         {
             if (!TryGetUserId(out var userId))
                 return Unauthorized();
 
             var result = await _columnService.DeleteColumnAsync(columnId, userId);
+            if (result.Success)
+            {
+                await BroadcastAsync(boardId, "ColumnDeleted", new { id = columnId });
+            }
             return ToActionResult(result);
         }
 
         [HttpPatch("{columnId:guid}/order")]
-        public async Task<IActionResult> UpdateOrder(Guid columnId, [FromBody] UpdateColumnOrderRequest request)
+        public async Task<IActionResult> UpdateOrder(Guid boardId, Guid columnId, [FromBody] UpdateColumnOrderRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -85,6 +101,10 @@ namespace RedPandaFlow.Api.Controllers
                 return Unauthorized();
 
             var result = await _columnService.UpdateColumnOrderAsync(columnId, userId, request);
+            if (result.Success)
+            {
+                await BroadcastAsync(boardId, "ColumnOrderChanged", new { columnId, newOrder = request.NewOrder });
+            }
             return ToActionResult(result);
         }
 
@@ -99,28 +119,47 @@ namespace RedPandaFlow.Api.Controllers
         }
 
         [HttpPost("{columnId:guid}/archive")]
-        public async Task<IActionResult> Archive(Guid columnId)
+        public async Task<IActionResult> Archive(Guid boardId, Guid columnId)
         {
             if (!TryGetUserId(out var userId))
                 return Unauthorized();
 
             var result = await _columnService.ArchiveColumnAsync(columnId, userId);
+            if (result.Success)
+            {
+                await BroadcastAsync(boardId, "ColumnArchived", new { id = columnId });
+            }
             return ToActionResult(result);
         }
 
         [HttpPost("{columnId:guid}/restore")]
-        public async Task<IActionResult> Restore(Guid columnId)
+        public async Task<IActionResult> Restore(Guid boardId, Guid columnId)
         {
             if (!TryGetUserId(out var userId))
                 return Unauthorized();
 
             var result = await _columnService.RestoreColumnAsync(columnId, userId);
+            if (result.Success && result.Data != null)
+            {
+                await BroadcastAsync(boardId, "ColumnRestored", new { column = result.Data });
+            }
             return ToActionResult(result);
         }
 
         private bool TryGetUserId(out Guid userId)
         {
             return Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
+        }
+
+        private Task BroadcastAsync(Guid boardId, string eventName, object payload)
+        {
+            var group = $"board-{boardId}";
+            var senderConnectionId = Request.Headers["X-Connection-Id"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(senderConnectionId))
+            {
+                return _hub.Clients.GroupExcept(group, new[] { senderConnectionId }).SendAsync(eventName, payload);
+            }
+            return _hub.Clients.Group(group).SendAsync(eventName, payload);
         }
 
         private IActionResult ToActionResult<T>(ServiceResult<T> result)
