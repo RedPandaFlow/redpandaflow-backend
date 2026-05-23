@@ -10,5 +10,10 @@ namespace RedPandaFlow.Application.DTOs
         public int Order { get; set; }
         public bool IsArchived { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        public List<LabelDto> Labels { get; set; } = new();
+        public List<UserDto> AssignedUsers { get; set; } = new();
+        public List<CommentDto> Comments { get; set; } = new();
+        public List<ChecklistDto> Checklists { get; set; } = new();
     }
 }
