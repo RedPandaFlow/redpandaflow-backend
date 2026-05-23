@@ -15,5 +15,6 @@ namespace RedPandaFlow.Domain.Entities
         public ICollection<CardUser> CardUsers { get; set; } = new List<CardUser>();
         public ICollection<CardLabel> CardLabels { get; set; } = new List<CardLabel>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+        public ICollection<Checklist> Checklists { get; set; } = new List<Checklist>();
     }
 }
