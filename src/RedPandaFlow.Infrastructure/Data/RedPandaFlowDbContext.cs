@@ -189,6 +189,23 @@ namespace RedPandaFlow.Infrastructure.Data
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
+            modelBuilder.Entity<Comment>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Content).IsRequired().HasColumnType("text");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(e => e.Card)
+                      .WithMany(c => c.Comments)
+                      .HasForeignKey(e => e.CardId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.Comments)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
         }
     }
 }
