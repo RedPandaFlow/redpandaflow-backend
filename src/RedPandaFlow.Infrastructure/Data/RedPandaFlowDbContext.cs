@@ -16,7 +16,13 @@ namespace RedPandaFlow.Infrastructure.Data
         public DbSet<Board> Boards { get; set; }
         public DbSet<BoardUser> BoardUser { get; set; }
         public DbSet<Column> Columns { get; set; }
-        public DbSet<Card> Cards {get; set;}
+        public DbSet<Card> Cards { get; set; }
+        public DbSet<Label> Labels { get; set; }
+        public DbSet<CardLabel> CardLabels { get; set; }
+        public DbSet<CardUser> CardUsers { get; set; }
+        public DbSet<Comment> Comments { get; set; }
+        public DbSet<Checklist> Checklists { get; set; }
+        public DbSet<ChecklistItem> ChecklistItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -142,6 +148,18 @@ namespace RedPandaFlow.Infrastructure.Data
                       .WithMany(c => c.Cards)
                       .HasForeignKey(e => e.ColumnId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<Label>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Color).IsRequired().HasMaxLength(7);
+
+                entity.HasOne(e => e.Board)
+                    .WithMany(b => b.Labels)
+                    .HasForeignKey(e => e.BoardId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
