@@ -8,6 +8,7 @@ namespace RedPandaFlow.Application.DTOs
         public string Title { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public List<ColumnDto> Columns { get; set; } = new List<ColumnDto>();
+        public List<LabelDto> AvailableLabels { get; set; } = new();
     }
 
     public class BoardMemberDto
