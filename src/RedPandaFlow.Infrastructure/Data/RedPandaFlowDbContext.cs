@@ -206,6 +206,17 @@ namespace RedPandaFlow.Infrastructure.Data
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.Restrict);
             });
+            modelBuilder.Entity<Checklist>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(100);
+
+                entity.HasOne(e => e.Card)
+                      .WithMany(c => c.Checklists)
+                      .HasForeignKey(e => e.CardId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }
