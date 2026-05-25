@@ -51,7 +51,6 @@ namespace RedPandaFlow.Infrastructure.Services
                 .Include(c => c.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
                 .FirstOrDefaultAsync(c => c.Id == cardId
-                                       && c.ColumnId == columnId
                                        && c.Column.BoardId == boardId
                                        && c.Column.Board.WorkspaceId == workspaceId);
 
