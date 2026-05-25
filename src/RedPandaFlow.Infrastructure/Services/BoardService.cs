@@ -65,7 +65,6 @@ namespace RedPandaFlow.Infrastructure.Services
                 return ServiceResult<BoardDto>.Fail("Board not found.", ServiceErrorType.NotFound);
             }
 
-            // L'utilisateur doit être membre du board ou du workspace parent
             var hasAccess = board.Members.Any(m => m.UserId == userId)
                 || await _dbContext.WorkspaceUsers.AnyAsync(wu => wu.WorkspaceId == board.WorkspaceId && wu.UserId == userId);
 

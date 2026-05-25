@@ -197,8 +197,8 @@ namespace RedPandaFlow.Infrastructure.Services
         public async Task<ServiceResult<LabelDto>> GetBoardLabelByIdAsync(Guid workspaceId, Guid boardId, Guid labelId, Guid userId)
         {
             var label = await _dbContext.Labels
-                .Include(l => l.Board).ThenInclude(b => b.Members)
-                .Include(l => l.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
+                .Include(l => l.Board).ThenInclude(b => b!.Members)
+                .Include(l => l.Board).ThenInclude(b => b!.Workspace).ThenInclude(w => w.Members)
                 .FirstOrDefaultAsync(l => l.Id == labelId && l.BoardId == boardId && l.Board!.WorkspaceId == workspaceId);
 
             if (label == null) return ServiceResult<LabelDto>.Fail("Label not found.", ServiceErrorType.NotFound);
@@ -227,8 +227,8 @@ namespace RedPandaFlow.Infrastructure.Services
         public async Task<ServiceResult<LabelDto>> UpdateBoardLabelAsync(Guid workspaceId, Guid boardId, Guid labelId, Guid userId, UpdateLabelRequest request)
         {
             var label = await _dbContext.Labels
-                .Include(l => l.Board).ThenInclude(b => b.Members)
-                .Include(l => l.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
+                .Include(l => l.Board).ThenInclude(b => b!.Members)
+                .Include(l => l.Board).ThenInclude(b => b!.Workspace).ThenInclude(w => w.Members)
                 .FirstOrDefaultAsync(l => l.Id == labelId && l.BoardId == boardId && l.Board!.WorkspaceId == workspaceId);
 
             if (label == null) return ServiceResult<LabelDto>.Fail("Label not found.", ServiceErrorType.NotFound);
@@ -244,8 +244,8 @@ namespace RedPandaFlow.Infrastructure.Services
         public async Task<ServiceResult<bool>> DeleteBoardLabelAsync(Guid workspaceId, Guid boardId, Guid labelId, Guid userId)
         {
             var label = await _dbContext.Labels
-                .Include(l => l.Board).ThenInclude(b => b.Members)
-                .Include(l => l.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
+                .Include(l => l.Board).ThenInclude(b => b!.Members)
+                .Include(l => l.Board).ThenInclude(b => b!.Workspace).ThenInclude(w => w.Members)
                 .FirstOrDefaultAsync(l => l.Id == labelId && l.BoardId == boardId && l.Board!.WorkspaceId == workspaceId);
 
             if (label == null) return ServiceResult<bool>.Fail("Label not found.", ServiceErrorType.NotFound);
