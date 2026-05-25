@@ -1,3 +1,4 @@
+using RedPandaFlow.Application.Common;
 using RedPandaFlow.Application.DTOs;
 
 namespace RedPandaFlow.Application.Interfaces.Services
@@ -10,5 +11,6 @@ namespace RedPandaFlow.Application.Interfaces.Services
         Task<bool> LogoutAsync(Guid userId);
         Task<bool> ValidateTokenAsync(string token);
         Task<AuthResponse> DeleteAccountAsync(Guid userId);
+        Task<ServiceResult<AvatarUpdateResult>> SetAvatarAsync(Guid userId, string? newAvatarUrl);
     }
 }
