@@ -200,7 +200,7 @@ namespace RedPandaFlow.Infrastructure.Services
             }
         }
 
-        public async Task<ServiceResult<AvatarUpdateResult>> SetAvatarAsync(Guid userId, string? newAvatarUrl)
+        public async Task<ServiceResult<AvatarUpdateResult>> SetAvatarAsync(Guid userId, byte[]? data, string? contentType, string? newAvatarUrl)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null)
@@ -209,6 +209,8 @@ namespace RedPandaFlow.Infrastructure.Services
             }
 
             var oldUrl = user.AvatarUrl;
+            user.AvatarData = data;
+            user.AvatarContentType = contentType;
             user.AvatarUrl = newAvatarUrl;
             await _context.SaveChangesAsync();
 
@@ -217,6 +219,17 @@ namespace RedPandaFlow.Infrastructure.Services
                 OldAvatarUrl = oldUrl,
                 NewAvatarUrl = newAvatarUrl
             });
+        }
+
+        public async Task<(byte[] Data, string ContentType)?> GetAvatarAsync(Guid userId)
+        {
+            var row = await _context.Users
+                .Where(u => u.Id == userId && u.AvatarData != null && u.AvatarContentType != null)
+                .Select(u => new { u.AvatarData, u.AvatarContentType })
+                .FirstOrDefaultAsync();
+
+            if (row == null) return null;
+            return (row.AvatarData!, row.AvatarContentType!);
         }
 
         public async Task<bool> ValidateTokenAsync(string token)

@@ -154,39 +154,29 @@ namespace RedPandaFlow.Api.Controllers
             {
                 return BadRequest(new { message = "Le fichier dépasse 2 Mo." });
             }
-            if (!AllowedAvatarExtensions.TryGetValue(file.ContentType ?? string.Empty, out var extension))
+            if (!AllowedAvatarTypes.Contains(file.ContentType ?? string.Empty))
             {
                 return BadRequest(new { message = "Format non supporté. Utilisez PNG, JPEG ou WebP." });
             }
 
-            await using var stream = file.OpenReadStream();
-            var header = new byte[12];
-            var read = await stream.ReadAsync(header.AsMemory(0, header.Length));
-            if (read < header.Length || !MatchesMagicBytes(header, file.ContentType!))
+            using var ms = new MemoryStream();
+            await file.CopyToAsync(ms);
+            var bytes = ms.ToArray();
+
+            if (!MatchesMagicBytes(bytes, file.ContentType!))
             {
                 return BadRequest(new { message = "Le contenu du fichier ne correspond pas à une image valide." });
             }
-            stream.Position = 0;
 
-            var fileName = $"{userId:N}-{Guid.NewGuid().ToString("N").Substring(0, 8)}{extension}";
-            var directory = Path.Combine(_env.WebRootPath, "uploads", "avatars");
-            Directory.CreateDirectory(directory);
-            var fullPath = Path.Combine(directory, fileName);
+            var version = Guid.NewGuid().ToString("N").Substring(0, 8);
+            var newUrl = $"/api/auth/avatar/{userId:N}?v={version}";
 
-            await using (var output = System.IO.File.Create(fullPath))
-            {
-                await stream.CopyToAsync(output);
-            }
-
-            var newUrl = $"/uploads/avatars/{fileName}";
-            var result = await _authService.SetAvatarAsync(userId, newUrl);
+            var result = await _authService.SetAvatarAsync(userId, bytes, file.ContentType!, newUrl);
             if (!result.Success)
             {
-                TryDeleteAvatarFile(newUrl);
                 return BadRequest(new { message = result.Message });
             }
 
-            TryDeleteAvatarFile(result.Data?.OldAvatarUrl);
             return Ok(new { avatarUrl = newUrl });
         }
 
@@ -199,56 +189,50 @@ namespace RedPandaFlow.Api.Controllers
                 return Unauthorized();
             }
 
-            var result = await _authService.SetAvatarAsync(userId, null);
+            var result = await _authService.SetAvatarAsync(userId, null, null, null);
             if (!result.Success)
             {
                 return BadRequest(new { message = result.Message });
             }
 
-            TryDeleteAvatarFile(result.Data?.OldAvatarUrl);
             return NoContent();
+        }
+
+        [HttpGet("avatar/{userId:guid}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAvatar(Guid userId)
+        {
+            var avatar = await _authService.GetAvatarAsync(userId);
+            if (avatar == null)
+            {
+                return NotFound();
+            }
+
+            Response.Headers.CacheControl = "public, max-age=86400";
+            return File(avatar.Value.Data, avatar.Value.ContentType);
         }
 
         private const long MaxAvatarBytes = 2 * 1024 * 1024;
 
-        private static readonly Dictionary<string, string> AllowedAvatarExtensions = new()
+        private static readonly HashSet<string> AllowedAvatarTypes = new()
         {
-            ["image/png"] = ".png",
-            ["image/jpeg"] = ".jpg",
-            ["image/webp"] = ".webp"
+            "image/png",
+            "image/jpeg",
+            "image/webp"
         };
 
-        private static bool MatchesMagicBytes(byte[] header, string contentType) => contentType switch
+        private static bool MatchesMagicBytes(byte[] bytes, string contentType) => contentType switch
         {
-            "image/png" => header.Length >= 8
-                && header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47
-                && header[4] == 0x0D && header[5] == 0x0A && header[6] == 0x1A && header[7] == 0x0A,
-            "image/jpeg" => header.Length >= 3
-                && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF,
-            "image/webp" => header.Length >= 12
-                && header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46
-                && header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50,
+            "image/png" => bytes.Length >= 8
+                && bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47
+                && bytes[4] == 0x0D && bytes[5] == 0x0A && bytes[6] == 0x1A && bytes[7] == 0x0A,
+            "image/jpeg" => bytes.Length >= 3
+                && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF,
+            "image/webp" => bytes.Length >= 12
+                && bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46
+                && bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50,
             _ => false
         };
-
-        private void TryDeleteAvatarFile(string? avatarUrl)
-        {
-            if (string.IsNullOrEmpty(avatarUrl) || !avatarUrl.StartsWith("/uploads/avatars/"))
-            {
-                return;
-            }
-
-            var fileName = Path.GetFileName(avatarUrl);
-            var path = Path.Combine(_env.WebRootPath, "uploads", "avatars", fileName);
-            try
-            {
-                if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to delete avatar file {Path}", path);
-            }
-        }
 
         private void IssueCookies(AuthResponse result)
         {

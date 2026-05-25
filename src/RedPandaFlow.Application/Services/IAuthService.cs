@@ -11,6 +11,7 @@ namespace RedPandaFlow.Application.Interfaces.Services
         Task<bool> LogoutAsync(Guid userId);
         Task<bool> ValidateTokenAsync(string token);
         Task<AuthResponse> DeleteAccountAsync(Guid userId);
-        Task<ServiceResult<AvatarUpdateResult>> SetAvatarAsync(Guid userId, string? newAvatarUrl);
+        Task<ServiceResult<AvatarUpdateResult>> SetAvatarAsync(Guid userId, byte[]? data, string? contentType, string? newAvatarUrl);
+        Task<(byte[] Data, string ContentType)?> GetAvatarAsync(Guid userId);
     }
 }
