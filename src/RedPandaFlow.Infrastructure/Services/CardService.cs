@@ -188,7 +188,6 @@ namespace RedPandaFlow.Infrastructure.Services
             string? movedFromColumnTitle = null;
             string? movedToColumnTitle = null;
 
-            // Déplacement vers une autre colonne
             if (request.NewColumnId != card.ColumnId)
             {
                 var targetColumn = await _dbContext.Columns
@@ -219,7 +218,6 @@ namespace RedPandaFlow.Infrastructure.Services
             }
             else
             {
-                // Déplacement dans la même colonne
                 var oldOrder = card.Order;
                 var newOrder = request.NewOrder;
 
