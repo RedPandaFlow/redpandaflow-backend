@@ -9,5 +9,6 @@ namespace RedPandaFlow.Application.Interfaces.Services
         Task<AuthResponse> RefreshTokenAsync(string refreshToken);
         Task<bool> LogoutAsync(Guid userId);
         Task<bool> ValidateTokenAsync(string token);
+        Task<AuthResponse> DeleteAccountAsync(Guid userId);
     }
 }
