@@ -395,7 +395,17 @@ namespace RedPandaFlow.Infrastructure.Services
             DueDate = card.DueDate,
             Order = card.Order,
             IsArchived = card.IsArchived,
-            CreatedAt = card.CreatedAt
+            CreatedAt = card.CreatedAt,
+            Labels = card.CardLabels?
+                .Where(cl => cl.Label != null)
+                .Select(cl => new LabelDto
+                {
+                    Id = cl.Label.Id,
+                    BoardId = cl.Label.BoardId,
+                    Name = cl.Label.Name,
+                    Color = cl.Label.Color
+                })
+                .ToList() ?? new List<LabelDto>()
         };
     }
 }
