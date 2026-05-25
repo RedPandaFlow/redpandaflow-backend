@@ -43,7 +43,7 @@ namespace RedPandaFlow.Infrastructure.Services
 
             var boards = await query
                 .Include(b => b.Columns.Where(c => !c.IsArchived).OrderBy(c => c.Order))
-                .ThenInclude(c => c.Cards)
+                .ThenInclude(c => c.Cards).ThenInclude(card => card.CardLabels).ThenInclude(cl => cl.Label)
                 .OrderBy(b => b.Title)
                 .Select(b => ToDto(b))
                 .ToListAsync();
@@ -54,7 +54,7 @@ namespace RedPandaFlow.Infrastructure.Services
         {
             var board = await _dbContext.Boards
                 .Include(b => b.Columns.OrderBy(c => c.Order))
-                .ThenInclude(c => c.Cards)
+                .ThenInclude(c => c.Cards).ThenInclude(card => card.CardLabels).ThenInclude(cl => cl.Label)
                 .Include(b => b.Members)
                 .FirstOrDefaultAsync(b => b.Id == boardId);
 
