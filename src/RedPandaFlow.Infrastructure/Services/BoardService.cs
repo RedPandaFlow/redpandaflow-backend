@@ -174,7 +174,15 @@ namespace RedPandaFlow.Infrastructure.Services
                     .ThenInclude(m => m.User)
                 .FirstOrDefaultAsync(b => b.Id == boardId);
 
-            if (board == null || board.Members.All(m => m.UserId != userId))
+            if (board == null)
+            {
+                return ServiceResult<List<BoardMemberDto>>.Fail("Board not found.", ServiceErrorType.NotFound);
+            }
+
+            var hasAccess = board.Members.Any(m => m.UserId == userId)
+                || await _dbContext.WorkspaceUsers.AnyAsync(wu => wu.WorkspaceId == board.WorkspaceId && wu.UserId == userId);
+
+            if (!hasAccess)
             {
                 return ServiceResult<List<BoardMemberDto>>.Fail("Board not found.", ServiceErrorType.NotFound);
             }
