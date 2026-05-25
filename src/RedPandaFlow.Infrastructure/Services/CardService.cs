@@ -161,12 +161,19 @@ namespace RedPandaFlow.Infrastructure.Services
 
         public async Task<ServiceResult<bool>> UpdateCardOrderAsync(Guid workspaceId, Guid boardId, Guid columnId, Guid cardId, Guid userId, UpdateCardOrderRequest request)
         {
+            _logger.LogInformation("[ORDER-DBG] PATCH start cardId={CardId} pathColumnId={PathColumnId} newColumnId={NewColumnId} newOrder={NewOrder} user={UserId}",
+                cardId, columnId, request.NewColumnId, request.NewOrder, userId);
+
             var card = await GetCardWithAccessAsync(workspaceId, boardId, columnId, cardId);
 
             if (card == null)
             {
+                _logger.LogWarning("[ORDER-DBG] card not found cardId={CardId}", cardId);
                 return ServiceResult<bool>.Fail("Card not found.", ServiceErrorType.NotFound);
             }
+
+            _logger.LogInformation("[ORDER-DBG] loaded card cardId={CardId} dbColumnId={DbColumnId} dbOrder={DbOrder}",
+                cardId, card.ColumnId, card.Order);
 
             var role = EffectiveRole(card.Column.Board, userId);
             if (role == null)
@@ -239,7 +246,16 @@ namespace RedPandaFlow.Infrastructure.Services
                 card.Order = newOrder;
             }
 
-            await _dbContext.SaveChangesAsync();
+            var changes = _dbContext.ChangeTracker.Entries()
+                .Where(e => e.State == Microsoft.EntityFrameworkCore.EntityState.Modified || e.State == Microsoft.EntityFrameworkCore.EntityState.Added)
+                .Count();
+            _logger.LogInformation("[ORDER-DBG] about to save cardId={CardId} targetColumnId={NewColumnId} targetOrder={NewOrder} trackedChanges={Changes}",
+                cardId, card.ColumnId, card.Order, changes);
+
+            var saved = await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation("[ORDER-DBG] saved cardId={CardId} rowsAffected={Saved} finalColumnId={ColumnId} finalOrder={Order}",
+                cardId, saved, card.ColumnId, card.Order);
 
             if (movedFromColumnTitle != null && movedToColumnTitle != null)
             {
