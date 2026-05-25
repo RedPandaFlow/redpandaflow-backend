@@ -75,10 +75,32 @@ namespace RedPandaFlow.Infrastructure.Services
                 })
                 .ToListAsync();
 
+            var guestBoardIdSet = guestBoardIds.ToHashSet();
+            var cards = await _context.Cards
+                .Where(c => !c.IsArchived
+                            && (EF.Functions.ILike(c.Title, pattern)
+                                || (c.Description != null && EF.Functions.ILike(c.Description, pattern)))
+                            && (memberWorkspaceIdSet.Contains(c.Column.Board.WorkspaceId)
+                                || guestBoardIdSet.Contains(c.Column.BoardId)))
+                .OrderBy(c => c.Title)
+                .Take(safeLimit)
+                .Select(c => new SearchCardResult
+                {
+                    Id = c.Id,
+                    ColumnId = c.ColumnId,
+                    BoardId = c.Column.BoardId,
+                    WorkspaceId = c.Column.Board.WorkspaceId,
+                    Title = c.Title,
+                    BoardTitle = c.Column.Board.Title,
+                    WorkspaceName = c.Column.Board.Workspace.Name
+                })
+                .ToListAsync();
+
             return ServiceResult<SearchResultDto>.Ok(new SearchResultDto
             {
                 Workspaces = workspaces,
-                Boards = boards
+                Boards = boards,
+                Cards = cards
             });
         }
     }
