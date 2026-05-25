@@ -75,6 +75,9 @@ namespace RedPandaFlow.Infrastructure.Services
 
         public async Task<ServiceResult<CommentDto>> AddCommentAsync(Guid workspaceId, Guid boardId, Guid columnId, Guid cardId, Guid userId, CreateCommentRequest request)
         {
+            var content = request.Content.Trim();
+            if (content.Length == 0) return ServiceResult<CommentDto>.Fail("Content cannot be empty.", ServiceErrorType.Validation);
+
             var card = await GetCardWithAccessAsync(workspaceId, boardId, columnId, cardId);
             if (card == null) return ServiceResult<CommentDto>.Fail("Card not found.", ServiceErrorType.NotFound);
             if (EffectiveRole(card.Column.Board, userId) == null || EffectiveRole(card.Column.Board, userId) == Role.Viewer)
@@ -83,7 +86,7 @@ namespace RedPandaFlow.Infrastructure.Services
             var user = await _dbContext.Users.FindAsync(userId);
             if (user == null) return ServiceResult<CommentDto>.Fail("User not found.", ServiceErrorType.NotFound);
 
-            var comment = new Comment { CardId = cardId, UserId = userId, Content = request.Content.Trim(), CreatedAt = DateTime.UtcNow };
+            var comment = new Comment { CardId = cardId, UserId = userId, Content = content, CreatedAt = DateTime.UtcNow };
             _dbContext.Comments.Add(comment);
             await _dbContext.SaveChangesAsync();
 
@@ -92,6 +95,9 @@ namespace RedPandaFlow.Infrastructure.Services
 
         public async Task<ServiceResult<CommentDto>> UpdateCommentAsync(Guid workspaceId, Guid boardId, Guid columnId, Guid cardId, Guid commentId, Guid userId, UpdateCommentRequest request)
         {
+            var content = request.Content.Trim();
+            if (content.Length == 0) return ServiceResult<CommentDto>.Fail("Content cannot be empty.", ServiceErrorType.Validation);
+
             var comment = await _dbContext.Comments
                 .Include(c => c.User)
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
@@ -101,7 +107,7 @@ namespace RedPandaFlow.Infrastructure.Services
             if (comment == null) return ServiceResult<CommentDto>.Fail("Comment not found.", ServiceErrorType.NotFound);
             if (comment.UserId != userId) return ServiceResult<CommentDto>.Fail("You can only edit your own comments.", ServiceErrorType.Forbidden);
 
-            comment.Content = request.Content.Trim();
+            comment.Content = content;
             await _dbContext.SaveChangesAsync();
 
             return ServiceResult<CommentDto>.Ok(ToCommentDto(comment, comment.User), "Comment updated.");
