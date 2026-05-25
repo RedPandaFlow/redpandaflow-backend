@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using RedPandaFlow.Api.Hubs;
 using RedPandaFlow.Application.Common;
 using RedPandaFlow.Application.DTOs;
 using RedPandaFlow.Application.Services;
@@ -13,10 +15,12 @@ namespace RedPandaFlow.Api.Controllers
     public class CardsController : ControllerBase
     {
         private readonly ICardService _cardService;
+        private readonly IHubContext<BoardPresenceHub> _hub;
 
-        public CardsController(ICardService cardService)
+        public CardsController(ICardService cardService, IHubContext<BoardPresenceHub> hub)
         {
             _cardService = cardService;
+            _hub = hub;
         }
 
         [HttpGet("/api/workspaces/{workspaceId:guid}/boards/{boardId:guid}/cards")]
@@ -59,6 +63,7 @@ namespace RedPandaFlow.Api.Controllers
                 return Unauthorized();
 
             var result = await _cardService.CreateCardAsync(workspaceId, boardId, columnId, userId, request);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -72,6 +77,7 @@ namespace RedPandaFlow.Api.Controllers
                 return Unauthorized();
 
             var result = await _cardService.UpdateCardAsync(workspaceId, boardId, columnId, cardId, userId, request);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -82,6 +88,7 @@ namespace RedPandaFlow.Api.Controllers
                 return Unauthorized();
 
             var result = await _cardService.DeleteCardAsync(workspaceId, boardId, columnId, cardId, userId);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -95,6 +102,7 @@ namespace RedPandaFlow.Api.Controllers
                 return Unauthorized();
 
             var result = await _cardService.UpdateCardOrderAsync(workspaceId, boardId, columnId, cardId, userId, request);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -124,6 +132,7 @@ namespace RedPandaFlow.Api.Controllers
                 return Unauthorized();
 
             var result = await _cardService.ArchiveCardAsync(workspaceId, boardId, columnId, cardId, userId);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -134,12 +143,25 @@ namespace RedPandaFlow.Api.Controllers
                 return Unauthorized();
 
             var result = await _cardService.RestoreCardAsync(workspaceId, boardId, columnId, cardId, userId);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
         private bool TryGetUserId(out Guid userId)
         {
             return Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
+        }
+
+        private Task BroadcastCardsChangedAsync(Guid boardId)
+        {
+            var group = $"board-{boardId}";
+            var payload = new { boardId };
+            var senderConnectionId = Request.Headers["X-Connection-Id"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(senderConnectionId))
+            {
+                return _hub.Clients.GroupExcept(group, new[] { senderConnectionId }).SendAsync("CardsChanged", payload);
+            }
+            return _hub.Clients.Group(group).SendAsync("CardsChanged", payload);
         }
 
         private IActionResult ToActionResult<T>(ServiceResult<T> result)

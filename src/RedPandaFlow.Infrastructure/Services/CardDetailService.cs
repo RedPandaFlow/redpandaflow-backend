@@ -33,7 +33,6 @@ namespace RedPandaFlow.Infrastructure.Services
                 .Include(c => c.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
                 .FirstOrDefaultAsync(c => c.Id == cardId
-                                       && c.ColumnId == columnId
                                        && c.Column.BoardId == boardId
                                        && c.Column.Board.WorkspaceId == workspaceId);
         }
@@ -61,7 +60,7 @@ namespace RedPandaFlow.Infrastructure.Services
                 .Include(c => c.User)
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
-                .FirstOrDefaultAsync(c => c.Id == commentId && c.CardId == cardId && c.Card.ColumnId == columnId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
+                .FirstOrDefaultAsync(c => c.Id == commentId && c.CardId == cardId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
 
             if (comment == null) return ServiceResult<CommentDto>.Fail("Comment not found.", ServiceErrorType.NotFound);
             if (EffectiveRole(comment.Card.Column.Board, userId) == null) return ServiceResult<CommentDto>.Fail("Forbidden.", ServiceErrorType.Forbidden);
@@ -98,7 +97,7 @@ namespace RedPandaFlow.Infrastructure.Services
                 .Include(c => c.User)
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
-                .FirstOrDefaultAsync(c => c.Id == commentId && c.CardId == cardId && c.Card.ColumnId == columnId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
+                .FirstOrDefaultAsync(c => c.Id == commentId && c.CardId == cardId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
 
             if (comment == null) return ServiceResult<CommentDto>.Fail("Comment not found.", ServiceErrorType.NotFound);
             if (comment.UserId != userId) return ServiceResult<CommentDto>.Fail("You can only edit your own comments.", ServiceErrorType.Forbidden);
@@ -114,7 +113,7 @@ namespace RedPandaFlow.Infrastructure.Services
             var comment = await _dbContext.Comments
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
-                .FirstOrDefaultAsync(c => c.Id == commentId && c.CardId == cardId && c.Card.ColumnId == columnId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
+                .FirstOrDefaultAsync(c => c.Id == commentId && c.CardId == cardId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
 
             if (comment == null) return ServiceResult<bool>.Fail("Comment not found.", ServiceErrorType.NotFound);
             var role = EffectiveRole(comment.Card.Column.Board, userId);
@@ -328,7 +327,7 @@ namespace RedPandaFlow.Infrastructure.Services
                 .Include(c => c.Items)
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
-                .FirstOrDefaultAsync(c => c.Id == checklistId && c.CardId == cardId && c.Card.ColumnId == columnId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
+                .FirstOrDefaultAsync(c => c.Id == checklistId && c.CardId == cardId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
 
             if (checklist == null) return ServiceResult<ChecklistDto>.Fail("Checklist not found.", ServiceErrorType.NotFound);
             if (EffectiveRole(checklist.Card!.Column!.Board!, userId) == null) return ServiceResult<ChecklistDto>.Fail("Forbidden.", ServiceErrorType.Forbidden);
@@ -356,7 +355,7 @@ namespace RedPandaFlow.Infrastructure.Services
                 .Include(c => c.Items)
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
-                .FirstOrDefaultAsync(c => c.Id == checklistId && c.CardId == cardId && c.Card.ColumnId == columnId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
+                .FirstOrDefaultAsync(c => c.Id == checklistId && c.CardId == cardId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
 
             if (checklist == null) return ServiceResult<ChecklistDto>.Fail("Checklist not found.", ServiceErrorType.NotFound);
             if (EffectiveRole(checklist.Card!.Column!.Board!, userId) == null || EffectiveRole(checklist.Card.Column.Board, userId) == Role.Viewer)
@@ -372,7 +371,7 @@ namespace RedPandaFlow.Infrastructure.Services
             var checklist = await _dbContext.Checklists
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
-                .FirstOrDefaultAsync(c => c.Id == checklistId && c.CardId == cardId && c.Card.ColumnId == columnId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
+                .FirstOrDefaultAsync(c => c.Id == checklistId && c.CardId == cardId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
 
             if (checklist == null) return ServiceResult<bool>.Fail("Not found.", ServiceErrorType.NotFound);
             if (EffectiveRole(checklist.Card!.Column!.Board!, userId) == null || EffectiveRole(checklist.Card.Column.Board, userId) == Role.Viewer)
@@ -389,7 +388,7 @@ namespace RedPandaFlow.Infrastructure.Services
             var checklist = await _dbContext.Checklists
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
-                .FirstOrDefaultAsync(c => c.Id == checklistId && c.CardId == cardId && c.Card.ColumnId == columnId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
+                .FirstOrDefaultAsync(c => c.Id == checklistId && c.CardId == cardId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
 
             if (checklist == null) return ServiceResult<List<ChecklistItemDto>>.Fail("Checklist not found.", ServiceErrorType.NotFound);
             if (EffectiveRole(checklist.Card!.Column!.Board!, userId) == null) return ServiceResult<List<ChecklistItemDto>>.Fail("Forbidden.", ServiceErrorType.Forbidden);
@@ -407,7 +406,7 @@ namespace RedPandaFlow.Infrastructure.Services
             var item = await _dbContext.ChecklistItems
                 .Include(i => i.Checklist).ThenInclude(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(i => i.Checklist).ThenInclude(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
-                .FirstOrDefaultAsync(i => i.Id == itemId && i.ChecklistId == checklistId && i.Checklist!.CardId == cardId && i.Checklist.Card!.ColumnId == columnId && i.Checklist.Card.Column!.BoardId == boardId && i.Checklist.Card.Column.Board!.WorkspaceId == workspaceId);
+                .FirstOrDefaultAsync(i => i.Id == itemId && i.ChecklistId == checklistId && i.Checklist!.CardId == cardId && i.Checklist.Card.Column!.BoardId == boardId && i.Checklist.Card.Column.Board!.WorkspaceId == workspaceId);
 
             if (item == null) return ServiceResult<ChecklistItemDto>.Fail("Item not found.", ServiceErrorType.NotFound);
             if (EffectiveRole(item.Checklist!.Card!.Column!.Board!, userId) == null) return ServiceResult<ChecklistItemDto>.Fail("Forbidden.", ServiceErrorType.Forbidden);
@@ -420,7 +419,7 @@ namespace RedPandaFlow.Infrastructure.Services
             var checklist = await _dbContext.Checklists
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
-                .FirstOrDefaultAsync(c => c.Id == checklistId && c.CardId == cardId && c.Card.ColumnId == columnId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
+                .FirstOrDefaultAsync(c => c.Id == checklistId && c.CardId == cardId && c.Card.Column.BoardId == boardId && c.Card.Column.Board.WorkspaceId == workspaceId);
 
             if (checklist == null) return ServiceResult<ChecklistItemDto>.Fail("Checklist not found.", ServiceErrorType.NotFound);
             if (EffectiveRole(checklist.Card!.Column!.Board!, userId) == null || EffectiveRole(checklist.Card.Column.Board, userId) == Role.Viewer)
@@ -437,7 +436,7 @@ namespace RedPandaFlow.Infrastructure.Services
             var item = await _dbContext.ChecklistItems
                 .Include(i => i.Checklist).ThenInclude(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(i => i.Checklist).ThenInclude(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
-                .FirstOrDefaultAsync(i => i.Id == itemId && i.ChecklistId == checklistId && i.Checklist!.CardId == cardId && i.Checklist.Card!.ColumnId == columnId && i.Checklist.Card.Column!.BoardId == boardId && i.Checklist.Card.Column.Board!.WorkspaceId == workspaceId);
+                .FirstOrDefaultAsync(i => i.Id == itemId && i.ChecklistId == checklistId && i.Checklist!.CardId == cardId && i.Checklist.Card.Column!.BoardId == boardId && i.Checklist.Card.Column.Board!.WorkspaceId == workspaceId);
 
             if (item == null) return ServiceResult<ChecklistItemDto>.Fail("Item not found.", ServiceErrorType.NotFound);
             if (EffectiveRole(item.Checklist!.Card!.Column!.Board!, userId) == null || EffectiveRole(item.Checklist.Card.Column.Board, userId) == Role.Viewer)
@@ -455,7 +454,7 @@ namespace RedPandaFlow.Infrastructure.Services
             var item = await _dbContext.ChecklistItems
                 .Include(i => i.Checklist).ThenInclude(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(i => i.Checklist).ThenInclude(c => c.Card).ThenInclude(card => card.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
-                .FirstOrDefaultAsync(i => i.Id == itemId && i.ChecklistId == checklistId && i.Checklist!.CardId == cardId && i.Checklist.Card!.ColumnId == columnId && i.Checklist.Card.Column!.BoardId == boardId && i.Checklist.Card.Column.Board!.WorkspaceId == workspaceId);
+                .FirstOrDefaultAsync(i => i.Id == itemId && i.ChecklistId == checklistId && i.Checklist!.CardId == cardId && i.Checklist.Card.Column!.BoardId == boardId && i.Checklist.Card.Column.Board!.WorkspaceId == workspaceId);
 
             if (item == null) return ServiceResult<bool>.Fail("Item not found.", ServiceErrorType.NotFound);
             if (EffectiveRole(item.Checklist!.Card!.Column!.Board!, userId) == null || EffectiveRole(item.Checklist.Card.Column.Board, userId) == Role.Viewer)

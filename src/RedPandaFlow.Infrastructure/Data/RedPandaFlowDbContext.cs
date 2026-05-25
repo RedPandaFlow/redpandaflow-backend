@@ -24,6 +24,7 @@ namespace RedPandaFlow.Infrastructure.Data
         public DbSet<Checklist> Checklists { get; set; }
         public DbSet<ChecklistItem> ChecklistItems { get; set; }
         public DbSet<Activity> Activities { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -250,6 +251,31 @@ namespace RedPandaFlow.Infrastructure.Data
                 entity.HasOne(e => e.User)
                       .WithMany()
                       .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Type).HasConversion<string>().HasMaxLength(25).IsRequired();
+                entity.Property(e => e.ActorUsername).IsRequired().HasMaxLength(25);
+                entity.Property(e => e.CardTitle).IsRequired().HasMaxLength(25);
+                entity.Property(e => e.BoardTitle).IsRequired().HasMaxLength(25);
+                entity.Property(e => e.FromColumnTitle).HasMaxLength(50);
+                entity.Property(e => e.ToColumnTitle).HasMaxLength(50);
+                entity.Property(e => e.IsRead).HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => new { e.UserId, e.IsRead, e.CreatedAt });
+
+                entity.HasOne(e => e.User)
+                      .WithMany()
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.ActorUser)
+                      .WithMany()
+                      .HasForeignKey(e => e.ActorUserId)
                       .OnDelete(DeleteBehavior.SetNull);
             });
         }
