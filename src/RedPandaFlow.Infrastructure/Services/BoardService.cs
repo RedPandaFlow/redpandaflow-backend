@@ -312,6 +312,7 @@ namespace RedPandaFlow.Infrastructure.Services
             UserId = member.UserId,
             Username = member.User?.Username ?? string.Empty,
             Email = member.User?.Email ?? string.Empty,
+            AvatarUrl = member.User?.AvatarUrl,
             Role = member.Role,
             IsOwner = member.UserId == ownerId
         };

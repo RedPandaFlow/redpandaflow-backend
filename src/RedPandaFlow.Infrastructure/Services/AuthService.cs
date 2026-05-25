@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using RedPandaFlow.Application.Common;
 using RedPandaFlow.Application.DTOs;
 using RedPandaFlow.Application.Interfaces.Services;
 using RedPandaFlow.Domain.Entities;
@@ -197,6 +198,25 @@ namespace RedPandaFlow.Infrastructure.Services
                 _logger.LogError(ex, "Account deletion failed for user {UserId}", userId);
                 return Fail("Account deletion failed.");
             }
+        }
+
+        public async Task<ServiceResult<AvatarUpdateResult>> SetAvatarAsync(Guid userId, string? newAvatarUrl)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return ServiceResult<AvatarUpdateResult>.Fail("User not found.", ServiceErrorType.NotFound);
+            }
+
+            var oldUrl = user.AvatarUrl;
+            user.AvatarUrl = newAvatarUrl;
+            await _context.SaveChangesAsync();
+
+            return ServiceResult<AvatarUpdateResult>.Ok(new AvatarUpdateResult
+            {
+                OldAvatarUrl = oldUrl,
+                NewAvatarUrl = newAvatarUrl
+            });
         }
 
         public async Task<bool> ValidateTokenAsync(string token)

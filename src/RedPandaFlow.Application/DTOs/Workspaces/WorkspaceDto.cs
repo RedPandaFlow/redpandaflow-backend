@@ -18,6 +18,7 @@ namespace RedPandaFlow.Application.DTOs
         public Guid UserId { get; set; }
         public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public string? AvatarUrl { get; set; }
         public Role? Role { get; set; }
         public bool IsOwner { get; set; }
         public List<Guid> BoardIds { get; set; } = new();

@@ -1,6 +1,6 @@
 namespace RedPandaFlow.Api.Hubs
 {
-    public record PresenceUser(Guid UserId, string Username);
+    public record PresenceUser(Guid UserId, string Username, string? AvatarUrl);
 
     public interface IBoardPresenceTracker
     {

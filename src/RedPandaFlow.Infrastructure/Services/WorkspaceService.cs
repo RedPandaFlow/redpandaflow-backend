@@ -195,6 +195,7 @@ namespace RedPandaFlow.Infrastructure.Services
                     UserId = g.Key,
                     Username = g.First().User?.Username ?? string.Empty,
                     Email = g.First().User?.Email ?? string.Empty,
+                    AvatarUrl = g.First().User?.AvatarUrl,
                     Role = null,
                     IsOwner = false,
                     BoardIds = g.Select(bu => bu.BoardId).ToList()
@@ -338,6 +339,7 @@ namespace RedPandaFlow.Infrastructure.Services
             UserId = member.UserId,
             Username = member.User?.Username ?? string.Empty,
             Email = member.User?.Email ?? string.Empty,
+            AvatarUrl = member.User?.AvatarUrl,
             Role = member.Role,
             IsOwner = member.UserId == ownerId,
             BoardIds = boardIds ?? new List<Guid>()
