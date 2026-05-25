@@ -386,26 +386,35 @@ namespace RedPandaFlow.Infrastructure.Services
             return ServiceResult<List<CardDto>>.Ok(cards);
         }
 
-        public static CardDto ToDto(Card card) => new()
+        public static CardDto ToDto(Card card)
         {
-            Id = card.Id,
-            ColumnId = card.ColumnId,
-            Title = card.Title,
-            Description = card.Description ?? string.Empty,
-            DueDate = card.DueDate,
-            Order = card.Order,
-            IsArchived = card.IsArchived,
-            CreatedAt = card.CreatedAt,
-            Labels = card.CardLabels?
-                .Where(cl => cl.Label != null)
-                .Select(cl => new LabelDto
-                {
-                    Id = cl.Label.Id,
-                    BoardId = cl.Label.BoardId,
-                    Name = cl.Label.Name,
-                    Color = cl.Label.Color
-                })
-                .ToList() ?? new List<LabelDto>()
-        };
+            var checklistItems = card.Checklists?
+                .SelectMany(cl => cl.Items ?? Enumerable.Empty<ChecklistItem>())
+                .ToList() ?? new List<ChecklistItem>();
+
+            return new CardDto
+            {
+                Id = card.Id,
+                ColumnId = card.ColumnId,
+                Title = card.Title,
+                Description = card.Description ?? string.Empty,
+                DueDate = card.DueDate,
+                Order = card.Order,
+                IsArchived = card.IsArchived,
+                CreatedAt = card.CreatedAt,
+                Labels = card.CardLabels?
+                    .Where(cl => cl.Label != null)
+                    .Select(cl => new LabelDto
+                    {
+                        Id = cl.Label.Id,
+                        BoardId = cl.Label.BoardId,
+                        Name = cl.Label.Name,
+                        Color = cl.Label.Color
+                    })
+                    .ToList() ?? new List<LabelDto>(),
+                ChecklistItemsDone = checklistItems.Count(i => i.IsFinished),
+                ChecklistItemsTotal = checklistItems.Count
+            };
+        }
     }
 }

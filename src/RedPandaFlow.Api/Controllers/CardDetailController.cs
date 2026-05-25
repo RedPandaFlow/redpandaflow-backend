@@ -189,6 +189,7 @@ namespace RedPandaFlow.Api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             if (!TryGetUserId(out var userId)) return Unauthorized();
             var result = await _cardDetailService.CreateChecklistAsync(workspaceId, boardId, columnId, cardId, userId, request);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -198,6 +199,7 @@ namespace RedPandaFlow.Api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             if (!TryGetUserId(out var userId)) return Unauthorized();
             var result = await _cardDetailService.UpdateChecklistAsync(workspaceId, boardId, columnId, cardId, checklistId, userId, request);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -206,6 +208,7 @@ namespace RedPandaFlow.Api.Controllers
         {
             if (!TryGetUserId(out var userId)) return Unauthorized();
             var result = await _cardDetailService.DeleteChecklistAsync(workspaceId, boardId, columnId, cardId, checklistId, userId);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -232,6 +235,7 @@ namespace RedPandaFlow.Api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             if (!TryGetUserId(out var userId)) return Unauthorized();
             var result = await _cardDetailService.AddChecklistItemAsync(workspaceId, boardId, columnId, cardId, checklistId, userId, request);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -241,6 +245,7 @@ namespace RedPandaFlow.Api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             if (!TryGetUserId(out var userId)) return Unauthorized();
             var result = await _cardDetailService.UpdateChecklistItemAsync(workspaceId, boardId, columnId, cardId, checklistId, itemId, userId, request);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -249,6 +254,7 @@ namespace RedPandaFlow.Api.Controllers
         {
             if (!TryGetUserId(out var userId)) return Unauthorized();
             var result = await _cardDetailService.DeleteChecklistItemAsync(workspaceId, boardId, columnId, cardId, checklistId, itemId, userId);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
