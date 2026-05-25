@@ -15,5 +15,7 @@ namespace RedPandaFlow.Application.DTOs
         public List<UserDto> AssignedUsers { get; set; } = new();
         public List<CommentDto> Comments { get; set; } = new();
         public List<ChecklistDto> Checklists { get; set; } = new();
+        public int ChecklistItemsDone { get; set; }
+        public int ChecklistItemsTotal { get; set; }
     }
 }
