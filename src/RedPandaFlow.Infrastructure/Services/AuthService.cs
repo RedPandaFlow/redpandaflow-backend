@@ -59,7 +59,7 @@ namespace RedPandaFlow.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Registration failed for {Email}", request.Email);
+                _logger.LogError(ex, "Registration failed.");
                 return Fail("Registration failed.");
             }
         }
@@ -82,7 +82,7 @@ namespace RedPandaFlow.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Login failed for {Email}", request.Email);
+                _logger.LogError(ex, "Login failed.");
                 return Fail("Login failed.");
             }
         }
@@ -115,7 +115,7 @@ namespace RedPandaFlow.Infrastructure.Services
 
             var newRefreshToken = await RotateRefreshTokenAsync(existing);
             var accessToken = _jwtTokenService.GenerateAccessToken(
-                existing.User.Id, existing.User.Username, existing.User.Email);
+                existing.User.Id, existing.User.Username);
 
             return new AuthResponse
             {
@@ -268,7 +268,7 @@ namespace RedPandaFlow.Infrastructure.Services
             {
                 Success = true,
                 Message = message,
-                AccessToken = _jwtTokenService.GenerateAccessToken(user.Id, user.Username, user.Email),
+                AccessToken = _jwtTokenService.GenerateAccessToken(user.Id, user.Username),
                 RefreshToken = refreshToken.Token,
                 User = ToDto(user)
             };
