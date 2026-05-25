@@ -53,7 +53,7 @@ namespace RedPandaFlow.Infrastructure.Services
                 .Where(c => c.CardId == cardId)
                 .Include(c => c.User)
                 .OrderByDescending(c => c.CreatedAt)
-                .Select(c => ToCommentDto(c, c.User!))
+                .Select(c => ToCommentDto(c, c.User))
                 .ToListAsync();
 
             return ServiceResult<List<CommentDto>>.Ok(comments);
@@ -70,7 +70,7 @@ namespace RedPandaFlow.Infrastructure.Services
             if (comment == null) return ServiceResult<CommentDto>.Fail("Comment not found.", ServiceErrorType.NotFound);
             if (EffectiveRole(comment.Card.Column.Board, userId) == null) return ServiceResult<CommentDto>.Fail("Forbidden.", ServiceErrorType.Forbidden);
 
-            return ServiceResult<CommentDto>.Ok(ToCommentDto(comment, comment.User!));
+            return ServiceResult<CommentDto>.Ok(ToCommentDto(comment, comment.User));
         }
 
         public async Task<ServiceResult<CommentDto>> AddCommentAsync(Guid workspaceId, Guid boardId, Guid columnId, Guid cardId, Guid userId, CreateCommentRequest request)
@@ -104,7 +104,7 @@ namespace RedPandaFlow.Infrastructure.Services
             comment.Content = request.Content.Trim();
             await _dbContext.SaveChangesAsync();
 
-            return ServiceResult<CommentDto>.Ok(ToCommentDto(comment, comment.User!), "Comment updated.");
+            return ServiceResult<CommentDto>.Ok(ToCommentDto(comment, comment.User), "Comment updated.");
         }
 
         public async Task<ServiceResult<bool>> DeleteCommentAsync(Guid workspaceId, Guid boardId, Guid columnId, Guid cardId, Guid commentId, Guid userId)
@@ -473,13 +473,13 @@ namespace RedPandaFlow.Infrastructure.Services
             AvatarUrl = user.AvatarUrl
         };
 
-        private static CommentDto ToCommentDto(Comment comment, User user) => new()
+        private static CommentDto ToCommentDto(Comment comment, User? user) => new()
         {
             Id = comment.Id,
             CardId = comment.CardId,
             UserId = comment.UserId,
-            Username = user.Username,
-            UserAvatarUrl = user.AvatarUrl,
+            Username = user?.Username ?? "Utilisateur supprimé",
+            UserAvatarUrl = user?.AvatarUrl,
             Content = comment.Content,
             CreatedAt = comment.CreatedAt
         };

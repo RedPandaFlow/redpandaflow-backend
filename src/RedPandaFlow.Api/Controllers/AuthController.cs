@@ -117,6 +117,25 @@ namespace RedPandaFlow.Api.Controllers
             return NoContent();
         }
 
+        [HttpDelete("account")]
+        [Authorize]
+        public async Task<IActionResult> DeleteAccount()
+        {
+            if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _authService.DeleteAccountAsync(userId);
+            if (!result.Success)
+            {
+                return Conflict(result);
+            }
+
+            AuthCookies.Clear(Response, _env);
+            return NoContent();
+        }
+
         private void IssueCookies(AuthResponse result)
         {
             if (string.IsNullOrEmpty(result.AccessToken) || string.IsNullOrEmpty(result.RefreshToken))

@@ -204,7 +204,7 @@ namespace RedPandaFlow.Infrastructure.Data
                 entity.HasOne(e => e.User)
                       .WithMany(u => u.Comments)
                       .HasForeignKey(e => e.UserId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.SetNull);
             });
             modelBuilder.Entity<Checklist>(entity =>
             {

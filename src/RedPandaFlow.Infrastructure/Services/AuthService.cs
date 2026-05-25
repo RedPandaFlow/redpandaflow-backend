@@ -140,6 +140,65 @@ namespace RedPandaFlow.Infrastructure.Services
             }
         }
 
+        public async Task<AuthResponse> DeleteAccountAsync(Guid userId)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return Fail("User not found.");
+            }
+
+            var ownedWorkspaces = await _context.Workspaces
+                .Where(w => w.OwnerId == userId)
+                .Select(w => new { w.Id, OtherMembers = w.Members.Count(m => m.UserId != userId) })
+                .ToListAsync();
+
+            if (ownedWorkspaces.Any(w => w.OtherMembers > 0))
+            {
+                return Fail("Transfer ownership of your workspaces before deleting your account.");
+            }
+
+            var ownedWorkspaceIds = ownedWorkspaces.Select(w => w.Id).ToHashSet();
+
+            var blockingBoards = await _context.Boards
+                .Where(b => b.OwnerId == userId && !ownedWorkspaceIds.Contains(b.WorkspaceId))
+                .AnyAsync(b => b.Members.Any(m => m.UserId != userId));
+
+            if (blockingBoards)
+            {
+                return Fail("Transfer ownership of your boards before deleting your account.");
+            }
+
+            try
+            {
+                var comments = await _context.Comments
+                    .Where(c => c.UserId == userId)
+                    .ToListAsync();
+                foreach (var comment in comments)
+                {
+                    comment.UserId = null;
+                }
+
+                if (ownedWorkspaceIds.Count > 0)
+                {
+                    var workspacesToRemove = await _context.Workspaces
+                        .Where(w => ownedWorkspaceIds.Contains(w.Id))
+                        .ToListAsync();
+                    _context.Workspaces.RemoveRange(workspacesToRemove);
+                }
+
+                _context.Users.Remove(user);
+                await _context.SaveChangesAsync();
+
+                return new AuthResponse { Success = true, Message = "Account deleted." };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Account deletion failed for user {UserId}", userId);
+                return Fail("Account deletion failed.");
+            }
+        }
+
         public async Task<bool> ValidateTokenAsync(string token)
         {
             try
