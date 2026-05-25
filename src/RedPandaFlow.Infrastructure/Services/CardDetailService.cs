@@ -20,10 +20,6 @@ namespace RedPandaFlow.Infrastructure.Services
             _logger = logger;
         }
 
-        // ==========================================
-        // --- HELPERS / SÉCURITÉ ---
-        // ==========================================
-
         private static Role? EffectiveRole(Board board, Guid userId)
         {
             var boardRole = board.Members.FirstOrDefault(m => m.UserId == userId)?.Role;
