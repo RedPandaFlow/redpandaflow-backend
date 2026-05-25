@@ -8,6 +8,8 @@ namespace RedPandaFlow.Domain.Entities
         public string PasswordHash { get; set; } = string.Empty;
         public string? Biography { get; set; }
         public string? AvatarUrl { get; set; }
+        public byte[]? AvatarData { get; set; }
+        public string? AvatarContentType { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();

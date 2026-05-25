@@ -37,6 +37,7 @@ namespace RedPandaFlow.Infrastructure.Data
                 entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(64);
                 entity.Property(e => e.Biography).HasColumnType("text");
                 entity.Property(e => e.AvatarUrl).HasMaxLength(512);
+                entity.Property(e => e.AvatarContentType).HasMaxLength(64);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.HasIndex(e => e.Email).IsUnique();

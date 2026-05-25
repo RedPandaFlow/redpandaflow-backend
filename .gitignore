@@ -42,10 +42,6 @@ appsettings.local.json
 .env
 .env.local
 
-# Uploaded files
-src/RedPandaFlow.Api/wwwroot/uploads/**
-!src/RedPandaFlow.Api/wwwroot/uploads/**/.gitkeep
-
 # IDE
 .idea/
 *.swp

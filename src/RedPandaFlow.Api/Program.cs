@@ -164,8 +164,6 @@ app.UseSwaggerUI(options =>
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
-
 app.UseCors("Frontend");
 
 app.UseRateLimiter();
