@@ -137,6 +137,14 @@ namespace RedPandaFlow.Infrastructure.Services
             return ServiceResult<bool>.Ok(true);
         }
 
+        public async Task<ServiceResult<bool>> DeleteAllAsync(Guid userId)
+        {
+            await _dbContext.Notifications
+                .Where(n => n.UserId == userId)
+                .ExecuteDeleteAsync();
+            return ServiceResult<bool>.Ok(true);
+        }
+
         private static NotificationDto ToDto(Notification n, string? actorAvatarUrl) => new()
         {
             Id = n.Id,

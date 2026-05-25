@@ -42,6 +42,14 @@ namespace RedPandaFlow.Api.Controllers
             return ToActionResult(result);
         }
 
+        [HttpDelete]
+        public async Task<IActionResult> DeleteAll()
+        {
+            if (!TryGetUserId(out var userId)) return Unauthorized();
+            var result = await _notificationService.DeleteAllAsync(userId);
+            return ToActionResult(result);
+        }
+
         private bool TryGetUserId(out Guid userId)
         {
             return Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);

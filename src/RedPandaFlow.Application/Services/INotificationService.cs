@@ -18,5 +18,6 @@ namespace RedPandaFlow.Application.Services
         Task<ServiceResult<List<NotificationDto>>> GetForUserAsync(Guid userId, int limit = 20);
         Task<ServiceResult<bool>> MarkReadAsync(Guid userId, Guid notificationId);
         Task<ServiceResult<bool>> MarkAllReadAsync(Guid userId);
+        Task<ServiceResult<bool>> DeleteAllAsync(Guid userId);
     }
 }
