@@ -12,11 +12,13 @@ namespace RedPandaFlow.Infrastructure.Services
     public class CardService : ICardService
     {
         private readonly RedPandaFlowDbContext _dbContext;
+        private readonly IActivityService _activityService;
         private readonly ILogger<CardService> _logger;
 
-        public CardService(RedPandaFlowDbContext dbContext, ILogger<CardService> logger)
+        public CardService(RedPandaFlowDbContext dbContext, IActivityService activityService, ILogger<CardService> logger)
         {
             _dbContext = dbContext;
+            _activityService = activityService;
             _logger = logger;
         }
 
@@ -114,6 +116,8 @@ namespace RedPandaFlow.Infrastructure.Services
             _dbContext.Cards.Add(card);
             await _dbContext.SaveChangesAsync();
 
+            await _activityService.LogCardCreatedAsync(card.Id, userId, column.Title);
+
             return ServiceResult<CardDto>.Ok(ToDto(card), "Card created.");
         }
 
@@ -164,6 +168,9 @@ namespace RedPandaFlow.Infrastructure.Services
                 return ServiceResult<bool>.Fail("Viewers cannot reorder cards.", ServiceErrorType.Forbidden);
             }
 
+            string? movedFromColumnTitle = null;
+            string? movedToColumnTitle = null;
+
             // Déplacement vers une autre colonne
             if (request.NewColumnId != card.ColumnId)
             {
@@ -177,6 +184,9 @@ namespace RedPandaFlow.Infrastructure.Services
                 }
 
                 var oldColumn = card.Column;
+                movedFromColumnTitle = oldColumn.Title;
+                movedToColumnTitle = targetColumn.Title;
+
                 foreach (var c in oldColumn.Cards.Where(c => c.Id != cardId && c.Order > card.Order))
                 {
                     c.Order--;
@@ -220,6 +230,12 @@ namespace RedPandaFlow.Infrastructure.Services
             }
 
             await _dbContext.SaveChangesAsync();
+
+            if (movedFromColumnTitle != null && movedToColumnTitle != null)
+            {
+                await _activityService.LogCardMovedAsync(cardId, userId, movedFromColumnTitle, movedToColumnTitle);
+            }
+
             return ServiceResult<bool>.Ok(true, "Card order updated.");
         }
 
