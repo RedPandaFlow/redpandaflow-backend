@@ -248,6 +248,7 @@ namespace RedPandaFlow.Infrastructure.Services
         private async Task<ServiceResult<ColumnDto>> SetArchivedAsync(Guid columnId, Guid userId, bool archived)
         {
             var column = await _dbContext.Columns
+                .Include(c => c.Cards)
                 .Include(c => c.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
                 .FirstOrDefaultAsync(c => c.Id == columnId);
@@ -273,8 +274,16 @@ namespace RedPandaFlow.Infrastructure.Services
             }
 
             column.IsArchived = archived;
-            await _dbContext.SaveChangesAsync();
 
+            if (column.Cards != null)
+            {
+                foreach (var card in column.Cards)
+                {
+                    card.IsArchived = archived;
+                }
+            }
+
+            await _dbContext.SaveChangesAsync();
             return ServiceResult<ColumnDto>.Ok(ToDto(column), archived ? "Column archived." : "Column restored.");
         }
 
@@ -285,7 +294,20 @@ namespace RedPandaFlow.Infrastructure.Services
             Title = column.Title,
             Order = column.Order,
             IsArchived = column.IsArchived,
-            CreatedAt = column.CreatedAt
+            CreatedAt = column.CreatedAt,
+            Cards = column.Cards == null ? new List<CardDto>() : column.Cards
+                .OrderBy(card => card.Order)
+                .Select(card => new CardDto
+                {
+                    Id = card.Id,
+                    ColumnId = card.ColumnId,
+                    Title = card.Title,
+                    Description = card.Description ?? string.Empty,
+                    DueDate = card.DueDate,
+                    Order = card.Order,
+                    IsArchived = card.IsArchived,
+                    CreatedAt = card.CreatedAt
+                }).ToList()
         };
     }
 }

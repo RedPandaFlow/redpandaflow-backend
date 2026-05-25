@@ -16,7 +16,13 @@ namespace RedPandaFlow.Infrastructure.Data
         public DbSet<Board> Boards { get; set; }
         public DbSet<BoardUser> BoardUser { get; set; }
         public DbSet<Column> Columns { get; set; }
-        public DbSet<Card> Cards {get; set;}
+        public DbSet<Card> Cards { get; set; }
+        public DbSet<Label> Labels { get; set; }
+        public DbSet<CardLabel> CardLabels { get; set; }
+        public DbSet<CardUser> CardUsers { get; set; }
+        public DbSet<Comment> Comments { get; set; }
+        public DbSet<Checklist> Checklists { get; set; }
+        public DbSet<ChecklistItem> ChecklistItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -141,6 +147,86 @@ namespace RedPandaFlow.Infrastructure.Data
                 entity.HasOne(e => e.Column)
                       .WithMany(c => c.Cards)
                       .HasForeignKey(e => e.ColumnId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<Label>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Color).IsRequired().HasMaxLength(7);
+
+                entity.HasOne(e => e.Board)
+                    .WithMany(b => b.Labels)
+                    .HasForeignKey(e => e.BoardId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<CardLabel>(entity =>
+            {
+                entity.HasKey(e => new { e.CardId, e.LabelId });
+
+                entity.HasOne(e => e.Card)
+                      .WithMany(c => c.CardLabels)
+                      .HasForeignKey(e => e.CardId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Label)
+                      .WithMany(l => l.CardLabels)
+                      .HasForeignKey(e => e.LabelId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<CardUser>(entity =>
+            {
+                entity.HasKey(e => new { e.CardId, e.UserId });
+
+                entity.HasOne(e => e.Card)
+                      .WithMany(c => c.CardUsers)
+                      .HasForeignKey(e => e.CardId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.CardUsers)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<Comment>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Content).IsRequired().HasColumnType("text");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(e => e.Card)
+                      .WithMany(c => c.Comments)
+                      .HasForeignKey(e => e.CardId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.Comments)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+            modelBuilder.Entity<Checklist>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(100);
+
+                entity.HasOne(e => e.Card)
+                      .WithMany(c => c.Checklists)
+                      .HasForeignKey(e => e.CardId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<ChecklistItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Content).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.IsFinished).HasDefaultValue(false);
+
+                entity.HasOne(e => e.Checklist)
+                      .WithMany(c => c.Items)
+                      .HasForeignKey(e => e.ChecklistId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
         }

@@ -12,5 +12,6 @@ namespace RedPandaFlow.Domain.Entities
         public User Owner { get; set; } = null!;
         public ICollection<Column> Columns { get; set; } = new List<Column>();
         public ICollection<BoardUser> Members { get; set; } = new List<BoardUser>();
+        public ICollection<Label> Labels { get; set; } = new List<Label>();
     }
 }
