@@ -71,6 +71,7 @@ builder.Services.AddScoped<IBoardService, BoardService>();
 builder.Services.AddScoped<IColumnService, ColumnService>();
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddScoped<IActivityService, ActivityService>();
 
 builder.Services.AddSingleton<IBoardPresenceTracker, BoardPresenceTracker>();
 builder.Services.AddSignalR();

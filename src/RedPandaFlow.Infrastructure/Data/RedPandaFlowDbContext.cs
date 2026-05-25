@@ -23,6 +23,7 @@ namespace RedPandaFlow.Infrastructure.Data
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Checklist> Checklists { get; set; }
         public DbSet<ChecklistItem> ChecklistItems { get; set; }
+        public DbSet<Activity> Activities { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -229,6 +230,27 @@ namespace RedPandaFlow.Infrastructure.Data
                       .WithMany(c => c.Items)
                       .HasForeignKey(e => e.ChecklistId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+            modelBuilder.Entity<Activity>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+                entity.Property(e => e.Type).HasConversion<string>().HasMaxLength(25).IsRequired();
+                entity.Property(e => e.FromColumnTitle).HasMaxLength(50);
+                entity.Property(e => e.ToColumnTitle).HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => new { e.CardId, e.CreatedAt });
+
+                entity.HasOne(e => e.Card)
+                      .WithMany()
+                      .HasForeignKey(e => e.CardId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                      .WithMany()
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
         }
     }
