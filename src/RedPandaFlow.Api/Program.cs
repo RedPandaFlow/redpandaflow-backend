@@ -72,6 +72,8 @@ builder.Services.AddScoped<IColumnService, ColumnService>();
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<INotificationPublisher, SignalRNotificationPublisher>();
 
 builder.Services.AddSingleton<IBoardPresenceTracker, BoardPresenceTracker>();
 builder.Services.AddSignalR();
@@ -174,5 +176,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<BoardPresenceHub>("/hubs/board");
+app.MapHub<NotificationsHub>("/hubs/notifications");
 
 app.Run();

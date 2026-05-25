@@ -13,12 +13,14 @@ namespace RedPandaFlow.Infrastructure.Services
     {
         private readonly RedPandaFlowDbContext _dbContext;
         private readonly IActivityService _activityService;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<CardService> _logger;
 
-        public CardService(RedPandaFlowDbContext dbContext, IActivityService activityService, ILogger<CardService> logger)
+        public CardService(RedPandaFlowDbContext dbContext, IActivityService activityService, INotificationService notificationService, ILogger<CardService> logger)
         {
             _dbContext = dbContext;
             _activityService = activityService;
+            _notificationService = notificationService;
             _logger = logger;
         }
 
@@ -117,6 +119,14 @@ namespace RedPandaFlow.Infrastructure.Services
             await _dbContext.SaveChangesAsync();
 
             await _activityService.LogCardCreatedAsync(card.Id, userId, column.Title);
+            await _notificationService.NotifyBoardMembersAsync(
+                workspaceId, boardId, card.Id, userId, NotificationType.CardCreated,
+                new NotificationPayload
+                {
+                    CardTitle = card.Title,
+                    BoardTitle = column.Board.Title,
+                    ToColumnTitle = column.Title
+                });
 
             return ServiceResult<CardDto>.Ok(ToDto(card), "Card created.");
         }
@@ -234,6 +244,15 @@ namespace RedPandaFlow.Infrastructure.Services
             if (movedFromColumnTitle != null && movedToColumnTitle != null)
             {
                 await _activityService.LogCardMovedAsync(cardId, userId, movedFromColumnTitle, movedToColumnTitle);
+                await _notificationService.NotifyBoardMembersAsync(
+                    workspaceId, boardId, cardId, userId, NotificationType.CardMoved,
+                    new NotificationPayload
+                    {
+                        CardTitle = card.Title,
+                        BoardTitle = card.Column.Board.Title,
+                        FromColumnTitle = movedFromColumnTitle,
+                        ToColumnTitle = movedToColumnTitle
+                    });
             }
 
             return ServiceResult<bool>.Ok(true, "Card order updated.");
