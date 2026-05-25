@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using RedPandaFlow.Api.Hubs;
 using RedPandaFlow.Application.Common;
 using RedPandaFlow.Application.DTOs;
 using RedPandaFlow.Application.Services;
@@ -13,10 +15,12 @@ namespace RedPandaFlow.Api.Controllers
     public class CardDetailController : ControllerBase
     {
         private readonly ICardDetailService _cardDetailService;
+        private readonly IHubContext<BoardPresenceHub> _hub;
 
-        public CardDetailController(ICardDetailService cardDetailService)
+        public CardDetailController(ICardDetailService cardDetailService, IHubContext<BoardPresenceHub> hub)
         {
             _cardDetailService = cardDetailService;
+            _hub = hub;
         }
 
 
@@ -111,6 +115,7 @@ namespace RedPandaFlow.Api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             if (!TryGetUserId(out var userId)) return Unauthorized();
             var result = await _cardDetailService.CreateBoardLabelAsync(workspaceId, boardId, userId, request);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -120,6 +125,7 @@ namespace RedPandaFlow.Api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             if (!TryGetUserId(out var userId)) return Unauthorized();
             var result = await _cardDetailService.UpdateBoardLabelAsync(workspaceId, boardId, labelId, userId, request);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -128,6 +134,7 @@ namespace RedPandaFlow.Api.Controllers
         {
             if (!TryGetUserId(out var userId)) return Unauthorized();
             var result = await _cardDetailService.DeleteBoardLabelAsync(workspaceId, boardId, labelId, userId);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -146,6 +153,7 @@ namespace RedPandaFlow.Api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             if (!TryGetUserId(out var userId)) return Unauthorized();
             var result = await _cardDetailService.AssignLabelToCardAsync(workspaceId, boardId, columnId, cardId, userId, request);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -154,6 +162,7 @@ namespace RedPandaFlow.Api.Controllers
         {
             if (!TryGetUserId(out var userId)) return Unauthorized();
             var result = await _cardDetailService.UnassignLabelFromCardAsync(workspaceId, boardId, columnId, cardId, labelId, userId);
+            if (result.Success) await BroadcastCardsChangedAsync(boardId);
             return ToActionResult(result);
         }
 
@@ -247,6 +256,18 @@ namespace RedPandaFlow.Api.Controllers
         private bool TryGetUserId(out Guid userId)
         {
             return Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
+        }
+
+        private Task BroadcastCardsChangedAsync(Guid boardId)
+        {
+            var group = $"board-{boardId}";
+            var payload = new { boardId };
+            var senderConnectionId = Request.Headers["X-Connection-Id"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(senderConnectionId))
+            {
+                return _hub.Clients.GroupExcept(group, new[] { senderConnectionId }).SendAsync("CardsChanged", payload);
+            }
+            return _hub.Clients.Group(group).SendAsync("CardsChanged", payload);
         }
 
         private IActionResult ToActionResult<T>(ServiceResult<T> result)

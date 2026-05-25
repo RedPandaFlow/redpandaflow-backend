@@ -297,17 +297,8 @@ namespace RedPandaFlow.Infrastructure.Services
             CreatedAt = column.CreatedAt,
             Cards = column.Cards == null ? new List<CardDto>() : column.Cards
                 .OrderBy(card => card.Order)
-                .Select(card => new CardDto
-                {
-                    Id = card.Id,
-                    ColumnId = card.ColumnId,
-                    Title = card.Title,
-                    Description = card.Description ?? string.Empty,
-                    DueDate = card.DueDate,
-                    Order = card.Order,
-                    IsArchived = card.IsArchived,
-                    CreatedAt = card.CreatedAt
-                }).ToList()
+                .Select(card => CardService.ToDto(card))
+                .ToList()
         };
     }
 }
