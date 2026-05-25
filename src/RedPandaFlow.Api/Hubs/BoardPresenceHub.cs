@@ -25,7 +25,7 @@ namespace RedPandaFlow.Api.Hubs
                 throw new HubException("Invalid board id.");
             }
 
-            var user = GetPresenceUser();
+            var user = await GetPresenceUserAsync();
             if (user == null)
             {
                 throw new HubException("Unauthenticated.");
@@ -77,7 +77,7 @@ namespace RedPandaFlow.Api.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        private PresenceUser? GetPresenceUser()
+        private async Task<PresenceUser?> GetPresenceUserAsync()
         {
             var idStr = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             var username = Context.User?.FindFirstValue(ClaimTypes.Name);
@@ -85,7 +85,11 @@ namespace RedPandaFlow.Api.Hubs
             {
                 return null;
             }
-            return new PresenceUser(userId, username);
+            var avatarUrl = await _db.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.AvatarUrl)
+                .FirstOrDefaultAsync();
+            return new PresenceUser(userId, username, avatarUrl);
         }
 
         private async Task<bool> HasBoardAccess(Guid boardId, Guid userId)
