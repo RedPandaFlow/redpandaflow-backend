@@ -300,7 +300,9 @@ namespace RedPandaFlow.Infrastructure.Services
         private async Task<Column?> GetColumnWithAccessAsync(Guid workspaceId, Guid boardId, Guid columnId)
         {
             return await _dbContext.Columns
-                .Include(c => c.Cards)
+                .Include(c => c.Cards).ThenInclude(card => card.CardLabels).ThenInclude(cl => cl.Label)
+                .Include(c => c.Cards).ThenInclude(card => card.Checklists).ThenInclude(cl => cl.Items)
+                .Include(c => c.Cards).ThenInclude(card => card.CardUsers).ThenInclude(cu => cu.User)
                 .Include(c => c.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
                 .FirstOrDefaultAsync(c => c.Id == columnId
@@ -311,6 +313,9 @@ namespace RedPandaFlow.Infrastructure.Services
         private async Task<Card?> GetCardWithAccessAsync(Guid workspaceId, Guid boardId, Guid columnId, Guid cardId)
         {
             return await _dbContext.Cards
+                .Include(c => c.CardLabels).ThenInclude(cl => cl.Label)
+                .Include(c => c.Checklists).ThenInclude(cl => cl.Items)
+                .Include(c => c.CardUsers).ThenInclude(cu => cu.User)
                 .Include(c => c.Column).ThenInclude(col => col.Cards)
                 .Include(c => c.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Members)
                 .Include(c => c.Column).ThenInclude(col => col.Board).ThenInclude(b => b.Workspace).ThenInclude(w => w.Members)
@@ -426,6 +431,16 @@ namespace RedPandaFlow.Infrastructure.Services
                         Color = cl.Label.Color
                     })
                     .ToList() ?? new List<LabelDto>(),
+                AssignedUsers = card.CardUsers?
+                    .Where(cu => cu.User != null)
+                    .Select(cu => new UserDto
+                    {
+                        Id = cu.User.Id,
+                        Username = cu.User.Username,
+                        Email = cu.User.Email,
+                        AvatarUrl = cu.User.AvatarUrl
+                    })
+                    .ToList() ?? new List<UserDto>(),
                 ChecklistItemsDone = checklistItems.Count(i => i.IsFinished),
                 ChecklistItemsTotal = checklistItems.Count
             };
