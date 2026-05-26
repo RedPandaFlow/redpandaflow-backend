@@ -10,6 +10,7 @@ obj/
 .vscode/
 *.user
 *.suo
+*.csproj.lscache
 
 # User-specific files
 *.rsuser
