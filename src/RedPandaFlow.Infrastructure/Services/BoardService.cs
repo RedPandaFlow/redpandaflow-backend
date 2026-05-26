@@ -57,7 +57,6 @@ namespace RedPandaFlow.Infrastructure.Services
                 .Include(b => b.Columns.OrderBy(c => c.Order))
                 .ThenInclude(c => c.Cards).ThenInclude(card => card.CardLabels).ThenInclude(cl => cl.Label)
                 .Include(b => b.Columns).ThenInclude(c => c.Cards).ThenInclude(card => card.Checklists).ThenInclude(cl => cl.Items)
-                // 👇 AJOUT DES USERS ICI AUSSI 👇
                 .Include(b => b.Columns).ThenInclude(c => c.Cards).ThenInclude(card => card.CardUsers).ThenInclude(cu => cu.User)
                 .Include(b => b.Members)
                 .FirstOrDefaultAsync(b => b.Id == boardId);
