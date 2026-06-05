@@ -8,6 +8,7 @@
 .idea
 **/*.user
 **/TestResults
+tests
 .env
 .env.*
 *.md
