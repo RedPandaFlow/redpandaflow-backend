@@ -9,7 +9,8 @@ COPY ["redpandaflow-backend/src/RedPandaFlow.Infrastructure/RedPandaFlow.Infrast
 RUN dotnet restore "redpandaflow-backend/src/RedPandaFlow.Api/RedPandaFlow.Api.csproj"
 
 COPY . .
-RUN dotnet publish "/app/redpandaflow-backend/src/RedPandaFlow.Api/RedPandaFlow.Api.csproj" -c Release -o /app/out
+RUN dotnet publish "/app/redpandaflow-backend/src/RedPandaFlow.Api/RedPandaFlow.Api.csproj" \
+    -c Release -o /app/out --no-restore /p:UseAppHost=false
 
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
@@ -20,4 +21,5 @@ ENV ASPNETCORE_HTTP_PORTS=${BACKEND_PORT}
 
 COPY --from=build /app/out .
 EXPOSE ${BACKEND_PORT}
+USER $APP_UID
 ENTRYPOINT ["dotnet", "RedPandaFlow.Api.dll"]
