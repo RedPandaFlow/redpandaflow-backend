@@ -1,0 +1,15 @@
+.git
+.github
+.gitignore
+**/bin
+**/obj
+.vs
+.vscode
+.idea
+**/*.user
+**/TestResults
+.env
+.env.*
+*.md
+LICENSE
+*.postman_collection.json

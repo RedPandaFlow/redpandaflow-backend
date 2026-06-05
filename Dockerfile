@@ -1,15 +1,15 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-COPY ["redpandaflow-backend/src/RedPandaFlow.Api/RedPandaFlow.Api.csproj", "redpandaflow-backend/src/RedPandaFlow.Api/"]
-COPY ["redpandaflow-backend/src/RedPandaFlow.Application/RedPandaFlow.Application.csproj", "redpandaflow-backend/src/RedPandaFlow.Application/"]
-COPY ["redpandaflow-backend/src/RedPandaFlow.Domain/RedPandaFlow.Domain.csproj", "redpandaflow-backend/src/RedPandaFlow.Domain/"]
-COPY ["redpandaflow-backend/src/RedPandaFlow.Infrastructure/RedPandaFlow.Infrastructure.csproj", "redpandaflow-backend/src/RedPandaFlow.Infrastructure/"]
+COPY ["src/RedPandaFlow.Api/RedPandaFlow.Api.csproj", "src/RedPandaFlow.Api/"]
+COPY ["src/RedPandaFlow.Application/RedPandaFlow.Application.csproj", "src/RedPandaFlow.Application/"]
+COPY ["src/RedPandaFlow.Domain/RedPandaFlow.Domain.csproj", "src/RedPandaFlow.Domain/"]
+COPY ["src/RedPandaFlow.Infrastructure/RedPandaFlow.Infrastructure.csproj", "src/RedPandaFlow.Infrastructure/"]
 
-RUN dotnet restore "redpandaflow-backend/src/RedPandaFlow.Api/RedPandaFlow.Api.csproj"
+RUN dotnet restore "src/RedPandaFlow.Api/RedPandaFlow.Api.csproj"
 
 COPY . .
-RUN dotnet publish "/app/redpandaflow-backend/src/RedPandaFlow.Api/RedPandaFlow.Api.csproj" \
+RUN dotnet publish "src/RedPandaFlow.Api/RedPandaFlow.Api.csproj" \
     -c Release -o /app/out --no-restore /p:UseAppHost=false
 
 
