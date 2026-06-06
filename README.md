@@ -1,32 +1,50 @@
 # RedPandaFlow Backend
 
-ASP.NET Core Web API for RedPandaFlow, a collaborative kanban application.
+API web ASP.NET Core de RedPandaFlow, une application de kanban collaboratif.
+
+## Présentation
+
+RedPandaFlow permet aux équipes d'organiser leur travail en espaces de travail,
+tableaux, colonnes et cartes, avec une synchronisation en temps réel entre
+collaborateurs. Ce dépôt héberge l'API backend : authentification, gestion des
+espaces/tableaux/colonnes/cartes, hubs temps réel et notifications.
+
+L'architecture globale (services et communication) est documentée dans le
+[dépôt documentation](https://github.com/RedPandaFlow/documentation/blob/main/architecture.md).
+
+## Équipe
+
+Travail collaboratif sur l'ensemble du projet (backend, frontend, infra,
+CI/CD, documentation) :
+
+- Nathan FERRE
+- Ylan Dessenne
 
 ## Stack
 
-- ASP.NET Core Web API (.NET 10)
-- Entity Framework Core 8 with PostgreSQL (Npgsql)
-- JWT authentication served through HttpOnly cookies
-- SignalR for real-time presence and notifications
+- API web ASP.NET Core (.NET 10)
+- Entity Framework Core avec PostgreSQL (Npgsql)
+- Authentification JWT servie via cookies HttpOnly
+- SignalR pour la présence et les notifications en temps réel
 - Clean Architecture (Domain, Application, Infrastructure, Api)
-- BCrypt for password hashing
-- Swagger for API exploration
+- BCrypt pour le hachage des mots de passe
+- Swagger pour explorer l'API
 
-## Layout
+## Organisation du code
 
 ```bash
 src/
-├── RedPandaFlow.Domain/         # Entities, enums (no dependencies)
-├── RedPandaFlow.Application/    # DTOs, service interfaces, result types
-├── RedPandaFlow.Infrastructure/ # EF Core DbContext, service implementations, migrations
-└── RedPandaFlow.Api/            # Controllers, SignalR hubs, host setup
+├── RedPandaFlow.Domain/         # Entités, enums (aucune dépendance)
+├── RedPandaFlow.Application/    # DTOs, interfaces de services, types de résultat
+├── RedPandaFlow.Infrastructure/ # DbContext EF Core, implémentations de services, migrations
+└── RedPandaFlow.Api/            # Contrôleurs, hubs SignalR, configuration de l'hôte
 ```
 
-## Prerequisites
+## Prérequis
 
-- .NET SDK 10.0
-- PostgreSQL 16 (local install or via the docker-compose stack)
-- `dotnet-ef` CLI tool (for migrations):
+- SDK .NET 10.0
+- PostgreSQL 16 (installation locale ou via la stack docker-compose)
+- L'outil CLI `dotnet-ef` (pour les migrations) :
 
 ```bash
 dotnet tool install --global dotnet-ef
@@ -40,18 +58,18 @@ cd redpandaflow-backend
 dotnet restore
 ```
 
-Create a `.env` file at the workspace root with at least:
+Créer un fichier `.env` à la racine du workspace avec au minimum :
 
 ```bash
-JwtSettings__SecretKey=<generate with: openssl rand -base64 48>
+JwtSettings__SecretKey=<générer avec : openssl rand -base64 48>
 ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=redpandaflow_db;Username=redpandaflow;Password=...
 ```
 
-## EF Core migrations
+## Migrations EF Core
 
-Run from the repository root.
+À exécuter depuis la racine du dépôt.
 
-Apply migrations to the database:
+Appliquer les migrations à la base :
 
 ```bash
 dotnet ef database update \
@@ -59,21 +77,21 @@ dotnet ef database update \
   --startup-project src/RedPandaFlow.Api
 ```
 
-Create a new migration:
+Créer une nouvelle migration :
 
 ```bash
-dotnet ef migrations add <MigrationName> \
+dotnet ef migrations add <NomDeLaMigration> \
   --project src/RedPandaFlow.Infrastructure \
   --startup-project src/RedPandaFlow.Api
 ```
 
-## Run in development
+## Lancement en développement
 
-The recommended way is via the docker-compose stack in
+La méthode recommandée est la stack docker-compose du dépôt
 [redpandaflow-infra](https://github.com/RedPandaFlow/redpandaflow-infra),
-which also brings up PostgreSQL and pgAdmin.
+qui démarre aussi PostgreSQL et pgAdmin.
 
-For a standalone run, with PostgreSQL reachable and the `.env` file in place:
+Pour un lancement autonome, avec PostgreSQL accessible et le fichier `.env` en place :
 
 ```bash
 dotnet build RedPandaFlow.sln
@@ -81,15 +99,15 @@ cd src/RedPandaFlow.Api
 dotnet run
 ```
 
-The API listens on `http://localhost:5090` and Swagger UI is mounted at the root path `/`.
+L'API écoute sur `http://localhost:5090` et l'interface Swagger est montée à la racine `/`.
 
-## Real-time hubs
+## Hubs temps réel
 
-- `/hubs/board` — board presence and per-board mutations
-- `/hubs/notifications` — per-user notification stream
+- `/hubs/board` — présence et mutations par tableau
+- `/hubs/notifications` — flux de notifications par utilisateur
 
-## Related repos
+## Dépôts liés
 
 - [redpandaflow-frontend](https://github.com/RedPandaFlow/redpandaflow-frontend) — React
-- [redpandaflow-infra](https://github.com/RedPandaFlow/redpandaflow-infra) — docker-compose stack
-- [documentation](https://github.com/RedPandaFlow/documentation) — project documentation
+- [redpandaflow-infra](https://github.com/RedPandaFlow/redpandaflow-infra) — stack docker-compose
+- [documentation](https://github.com/RedPandaFlow/documentation) — documentation du projet
